@@ -1,0 +1,87 @@
+$bg-light: #f1f8fc;
+$primary: #0074c7;
+$primary-dark: #00497c;
+$text-color: #384050;
+$danger: #cd2c2e;
+$success: #82b864;
+
+body {
+  background-color: $bg-light;
+  color: $text-color;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+// Navbar
+.navbar {
+  background-color: $primary-dark !important;
+  .navbar-brand {
+    color: $bg-light !important;
+    font-weight: bold;
+    font-size: 1.5rem;
+  }
+  .nav-link, .btn { color: $bg-light !important; }
+  .btn-primary {
+    background-color: $primary;
+    border-color: $primary;
+    &:hover { background-color: darken($primary, 10%); border-color: darken($primary, 10%); }
+  }
+  .btn-danger {
+    background-color: $danger;
+    border-color: $danger;
+    &:hover { background-color: darken($danger, 10%); border-color: darken($danger, 10%); }
+  }
+}
+
+// Tableau mini-cards
+.trajet-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 1rem;
+
+  thead {
+    th {
+      background-color: $primary-dark;
+      color: $bg-light;
+      font-weight: bold;
+      padding: 0.75rem 1rem;
+
+      &:first-child {
+        border-top-left-radius: 12px;   // coin arrondi gauche
+      }
+      &:last-child {
+        border-top-right-radius: 12px;  // coin arrondi droit
+      }
+    }
+  }
+
+  tbody {
+    .trajet-row {
+      background-color: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      transition: transform 0.2s, box-shadow 0.2s;
+
+      &:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+      }
+
+      td.trajet-info {
+        padding: 0.75rem 1rem;
+        color: $text-color;
+      }
+
+      td.places-dispo {
+        font-weight: 600;
+        color: $success;
+      }
+    }
+  }
+}
+
+// Alert flash
+.alert-success {
+  background-color: $success;
+  color: #fff;
+  border: none;
+}

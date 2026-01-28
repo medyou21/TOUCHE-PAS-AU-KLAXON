@@ -1,0 +1,19 @@
+{
+    "name": "moham/touche-pas-au-klaxon",
+    "description": "Application interne pour favoriser le covoiturage",
+    "type": "project",
+    "authors": [
+        {
+            "name": "Mohamed Hamdi",
+            "email": "mohamed.ing2@gmail.com"
+        }
+    ],
+    "require": {
+        "izniburak/router": "^3.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    }
+}
