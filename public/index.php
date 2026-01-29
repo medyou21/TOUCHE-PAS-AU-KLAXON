@@ -32,7 +32,7 @@ $router->get('/trajet/create', 'TrajetController@createForm'); // formulaire
 $router->post('/trajet/create', 'TrajetController@create');    // création
 
 $router->get('/trajet/edit/{id}', 'TrajetController@edit');
-$router->post('/trajet/update/{id}', 'TrajetController@update');
+$router->post('/trajet/edit/{id}', 'TrajetController@edit');
 $router->post('/trajet/delete/{id}', 'TrajetController@delete');
 
 // =======================
