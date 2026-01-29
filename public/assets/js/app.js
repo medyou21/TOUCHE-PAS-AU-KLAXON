@@ -1,17 +1,20 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+    // Vérifie que BASE_URL existe côté JS
+    const BASE_URL = '<?= BASE_URL ?>';
+    if (!BASE_URL) console.error('BASE_URL non défini !');
+
     // Utilisateur connecté
     window.user = <?= json_encode($user ?? null) ?>;
     window.userLoggedIn = !!window.user;
 
-    // ---------------------------------
+    // -------------------------------
     // Fonction pour charger les trajets
-    // ---------------------------------
+    // -------------------------------
     window.loadTrajets = async function() {
         const container = document.getElementById('trajets-container');
-
         try {
-            const res = await fetch('<?= BASE_URL ?>/trajet/listJson');
+            const res = await fetch(`${BASE_URL}/trajet/listJson`);
             const trajets = await res.json();
 
             if (!trajets.length) {
@@ -35,20 +38,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     </thead>
                     <tbody>
             `;
-
             let modals = '';
 
             trajets.forEach(t => {
-
                 // Séparer date et heure
                 let dateDepart = '', heureDepart = '', dateArrivee = '', heureArrivee = '';
                 if (t.date_depart) {
-                    const [d, h] = t.date_depart.split(' ');
+                    const [d,h] = t.date_depart.split(' ');
                     dateDepart = d.split('-').reverse().join('/');
                     heureDepart = h.slice(0,5);
                 }
                 if (t.date_arrivee) {
-                    const [d, h] = t.date_arrivee.split(' ');
+                    const [d,h] = t.date_arrivee.split(' ');
                     dateArrivee = d.split('-').reverse().join('/');
                     heureArrivee = h.slice(0,5);
                 }
@@ -70,21 +71,18 @@ document.addEventListener('DOMContentLoaded', () => {
                             <i class="bi bi-eye"></i>
                         </button>
                     `;
-
                     if (t.conducteur_id == window.user.id) {
                         html += `
-                            <a href="<?= BASE_URL ?>/trajet/edit/${t.id}" class="btn btn-sm btn-warning">
+                            <a href="${BASE_URL}/trajet/edit/${encodeURIComponent(t.id)}" class="btn btn-sm btn-warning">
                                 <i class="bi bi-pencil"></i>
                             </a>
-                            <button class="btn btn-sm btn-danger" onclick="deleteTrajet(${t.id})">
+                            <button class="btn btn-sm btn-danger" onclick="deleteTrajet(${encodeURIComponent(t.id)})">
                                 <i class="bi bi-trash"></i>
                             </button>
                         `;
                     }
-
                     html += `</td>`;
                 }
-
                 html += `</tr>`;
 
                 // Modal conducteur
@@ -114,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             });
 
-            html += `</tbody></table>`;
+            html += '</tbody></table>';
             container.innerHTML = html + modals;
 
         } catch (err) {
@@ -123,48 +121,59 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // ---------------------------------
+    // -------------------------------
     // Formulaire création trajet (AJAX)
-    // ---------------------------------
+    // -------------------------------
     const form = document.getElementById('trajetForm');
     if (form) {
         form.addEventListener('submit', async e => {
             e.preventDefault();
-            const data = new FormData(form);
+            const data = new URLSearchParams(new FormData(form)); // plus compatible PHP
 
             try {
-                const res = await fetch('<?= BASE_URL ?>/trajet/create', {
+                const res = await fetch(`${BASE_URL}/trajet/create`, {
                     method: 'POST',
                     body: data
                 });
                 const result = await res.json();
-                alert(result.message);
+                showModal(result.message, result.success);
                 if (result.success) {
                     form.reset();
                     window.loadTrajets();
                 }
             } catch (err) {
                 console.error(err);
+                showModal('Erreur serveur', false);
             }
         });
     }
 
-    // ---------------------------------
+    // -------------------------------
     // Supprimer un trajet (AJAX)
-    // ---------------------------------
+    // -------------------------------
     window.deleteTrajet = async function(id) {
         if (!confirm('Supprimer ce trajet ?')) return;
         try {
-            const res = await fetch(`<?= BASE_URL ?>/trajet/delete/${id}`, { method: 'POST' });
+            const res = await fetch(`${BASE_URL}/trajet/delete/${encodeURIComponent(id)}`, { method: 'POST' });
             const result = await res.json();
-            alert(result.message);
-            if (result.success) {
-                window.loadTrajets();
-            }
+            showModal(result.message, result.success);
+            if (result.success) window.loadTrajets();
         } catch (err) {
             console.error(err);
+            showModal('Erreur serveur', false);
         }
     };
+
+    // -------------------------------
+    // Affichage modale simple
+    // -------------------------------
+    function showModal(message, success) {
+        const modalEl = document.getElementById('messageModal');
+        if (!modalEl) return alert(message); // fallback
+        document.getElementById('messageModalBody').innerText = message;
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
 
     // Chargement initial
     window.loadTrajets();
