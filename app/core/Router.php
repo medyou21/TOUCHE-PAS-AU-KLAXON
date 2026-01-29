@@ -2,30 +2,60 @@
 namespace App\Core;
 
 class Router {
-    private $routes = [];
+    private array $routes = [];
 
-    public function get($url, $action) {
+    // Ajouter une route GET
+    public function get(string $url, string $action): void {
         $this->routes['GET'][$url] = $action;
     }
 
-    public function post($url, $action) {
+    // Ajouter une route POST
+    public function post(string $url, string $action): void {
         $this->routes['POST'][$url] = $action;
     }
 
-    public function run() {
-        $baseUri = '/TOUCHE-PAS-AU-KLAXON-HAMDI-Mohamed/public'; // à adapter selon URL
-        $uri = str_replace($baseUri, '', $_SERVER['REQUEST_URI']);
-        $uri = explode('?', $uri)[0];
-        $method = $_SERVER['REQUEST_METHOD'];
+    // Lancer le router
+    public function run(): void
+{
+    $scriptDir = dirname($_SERVER['SCRIPT_NAME']); 
+    $requestUri = $_SERVER['REQUEST_URI'];
 
-        if(isset($this->routes[$method][$uri])) {
-            $action = $this->routes[$method][$uri];
-            [$controller, $controllerMethod] = explode('@', $action);
+    // Nettoyer l'URI
+    $uri = str_replace($scriptDir, '', $requestUri);
+    $uri = parse_url($uri, PHP_URL_PATH);
+    $uri = '/' . trim($uri, '/');
+
+    $method = $_SERVER['REQUEST_METHOD'];
+
+    if (!isset($this->routes[$method])) {
+        $this->notFound();
+        return;
+    }
+
+    foreach ($this->routes[$method] as $route => $action) {
+
+        $route = '/' . trim($route, '/');
+        $pattern = preg_replace('#\{[^\}]+\}#', '([^/]+)', $route);
+        $pattern = "#^" . $pattern . "$#";
+
+        if (preg_match($pattern, $uri, $matches)) {
+            array_shift($matches);
+
+            [$controller, $methodName] = explode('@', $action);
             $controller = "App\\Controllers\\$controller";
-            $controllerObj = new $controller();
-            $controllerObj->$controllerMethod();
-        } else {
-            echo "404 - Page non trouvée";
+
+            call_user_func_array([new $controller(), $methodName], $matches);
+            return;
         }
     }
+
+    $this->notFound();
+}
+
+private function notFound(): void
+{
+    header("HTTP/1.0 404 Not Found");
+    echo "<h1>404 - Page non trouvée</h1>";
+}
+
 }

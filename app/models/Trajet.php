@@ -15,31 +15,28 @@ class Trajet
 
     /**
      * Récupère les trajets disponibles
-     * - date de départ future
-     * - au moins une place disponible
-     * - triés par date de départ croissante
-     *
-     * @return array
+     * (date future + places disponibles)
      */
     public function getAvailableTrajets(): array
     {
-          $sql = "
-        SELECT 
-            t.*,
-            a1.nom_agence AS depart,
-            a2.nom_agence AS arrivee,
-            u.prenom,
-            u.nom,
-            u.email,
-            u.telephone
-        FROM trajets t
-        JOIN agences a1 ON t.agence_depart_id = a1.id
-        JOIN agences a2 ON t.agence_arrivee_id = a2.id
-        JOIN utilisateurs u ON t.auteur_id = u.id
-        WHERE t.nb_places_disponibles > 0
-          AND t.date_depart > NOW()
-        ORDER BY t.date_depart ASC
-    ";
+        $sql = "
+            SELECT 
+                t.*,
+                a1.nom_agence AS depart,
+                a2.nom_agence AS arrivee,
+                u.prenom,
+                u.nom,
+                u.email,
+                u.telephone,
+                 t.conducteur_id
+            FROM trajets t
+            INNER JOIN agences a1 ON t.agence_depart_id = a1.id
+            INNER JOIN agences a2 ON t.agence_arrivee_id = a2.id
+            INNER JOIN utilisateurs u ON t.conducteur_id = u.id
+            WHERE t.nb_places_disponibles > 0
+              AND t.date_depart > NOW()
+            ORDER BY t.date_depart ASC
+        ";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute();
@@ -49,9 +46,6 @@ class Trajet
 
     /**
      * Crée un nouveau trajet
-     *
-     * @param array $data
-     * @return bool
      */
     public function create(array $data): bool
     {
@@ -63,8 +57,7 @@ class Trajet
                 date_arrivee,
                 nb_places_totales,
                 nb_places_disponibles,
-                contact_id,
-                auteur_id
+                conducteur_id
             ) VALUES (
                 :depart,
                 :arrivee,
@@ -72,22 +65,34 @@ class Trajet
                 :date_arrivee,
                 :places_totales,
                 :places_disponibles,
-                :contact,
-                :auteur
+                :conducteur
             )
         ";
 
         $stmt = $this->db->prepare($sql);
 
         return $stmt->execute([
-            ':depart'              => $data['depart'],
-            ':arrivee'             => $data['arrivee'],
-            ':date_depart'         => $data['date_depart'],
-            ':date_arrivee'        => $data['date_arrivee'],
-            ':places_totales'      => $data['nb_places_totales'],
-            ':places_disponibles'  => $data['nb_places_totales'], // au départ = total
-            ':contact'             => $data['contact_id'],
-            ':auteur'              => $data['auteur_id']
+            ':depart'             => $data['depart'],
+            ':arrivee'            => $data['arrivee'],
+            ':date_depart'        => $data['date_depart'],
+            ':date_arrivee'       => $data['date_arrivee'],
+            ':places_totales'     => $data['nb_places_totales'],
+            ':places_disponibles' => $data['nb_places_totales'], // initialement = total
+            ':conducteur'         => $data['conducteur_id']
         ]);
+    }
+
+    /**
+     * Récupère toutes les agences
+     */
+    public function getAgences(): array
+    {
+        $stmt = $this->db->query("
+            SELECT id, nom_agence
+            FROM agences
+            ORDER BY nom_agence ASC
+        ");
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
