@@ -1,8 +1,4 @@
 <?php
-// --------------------------------------------------
-// public/index.php
-// --------------------------------------------------
-
 session_start();
 
 // Racine du projet
@@ -22,11 +18,9 @@ $router = new Router();
 // =======================
 // Routes publiques
 // =======================
-
-// Page d'accueil : redirige vers login si non connecté
 $router->get('/', 'TrajetController@home');
+$router->get('/trajets/json', 'TrajetController@listJson');
 
-// Authentification
 $router->get('/login', 'AuthController@showLoginForm');
 $router->post('/login', 'AuthController@login');
 $router->get('/logout', 'AuthController@logout');
@@ -34,22 +28,17 @@ $router->get('/logout', 'AuthController@logout');
 // =======================
 // Trajets
 // =======================
+$router->get('/trajet/create', 'TrajetController@createForm'); // formulaire
+$router->post('/trajet/create', 'TrajetController@create');    // création
 
-// Création d'un trajet
-$router->get('/trajet/create', 'TrajetController@create');
-$router->post('/trajet/create', 'TrajetController@store');
-
-// Édition / Mise à jour / Suppression
-$router->get('/trajet/edit', 'TrajetController@edit');
-$router->post('/trajet/update', 'TrajetController@update');
-$router->post('/trajet/delete', 'TrajetController@delete');
+$router->get('/trajet/edit/{id}', 'TrajetController@edit');
+$router->post('/trajet/update/{id}', 'TrajetController@update');
+$router->post('/trajet/delete/{id}', 'TrajetController@delete');
 
 // =======================
 // Administration
 // =======================
 $router->get('/admin/dashboard', 'AdminController@index');
 
-// =======================
 // Lancer le router
-// =======================
 $router->run();

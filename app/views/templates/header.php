@@ -31,7 +31,7 @@ require_once __DIR__ . '/../../../config/config.php';
     >
 
     <!-- CSS personnalisé -->
-    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/main.css">
 </head>
 
 <body>

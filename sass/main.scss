@@ -1,38 +1,96 @@
+/* ==========================================================
+   VARIABLES
+========================================================== */
 $bg-light: #f1f8fc;
 $primary: #0074c7;
 $primary-dark: #00497c;
 $text-color: #384050;
 $danger: #cd2c2e;
 $success: #82b864;
+$white: #ffffff;
+$shadow-soft: 0 4px 10px rgba(0, 0, 0, 0.05);
+$shadow-hover: 0 12px 25px rgba(0, 0, 0, 0.12);
+$radius: 14px;
+$transition: 0.25s ease;
 
+
+/* ==========================================================
+   GLOBAL
+========================================================== */
 body {
   background-color: $bg-light;
   color: $text-color;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
-// Navbar
+h2, h3, h4 {
+  font-weight: 600;
+}
+
+.text-primary-dark {
+  color: $primary-dark;
+}
+
+
+/* ==========================================================
+   NAVBAR
+========================================================== */
 .navbar {
   background-color: $primary-dark !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+
   .navbar-brand {
     color: $bg-light !important;
     font-weight: bold;
     font-size: 1.5rem;
   }
-  .nav-link, .btn { color: $bg-light !important; }
+
+  .nav-link,
+  .btn {
+    color: $bg-light !important;
+  }
+
   .btn-primary {
     background-color: $primary;
     border-color: $primary;
-    &:hover { background-color: darken($primary, 10%); border-color: darken($primary, 10%); }
+
+    &:hover {
+      background-color: darken($primary, 10%);
+      border-color: darken($primary, 10%);
+    }
   }
+
   .btn-danger {
     background-color: $danger;
     border-color: $danger;
-    &:hover { background-color: darken($danger, 10%); border-color: darken($danger, 10%); }
+
+    &:hover {
+      background-color: darken($danger, 10%);
+      border-color: darken($danger, 10%);
+    }
   }
 }
 
-// Tableau mini-cards
+
+/* ==========================================================
+   ALERTS
+========================================================== */
+.alert-success {
+  background-color: $success;
+  color: $white;
+  border: none;
+}
+
+.alert-danger {
+  background-color: $danger;
+  color: $white;
+  border: none;
+}
+
+
+/* ==========================================================
+   TABLE TRAJETS = CARDS ANIMÉES
+========================================================== */
 .trajet-table {
   width: 100%;
   border-collapse: separate;
@@ -46,42 +104,122 @@ body {
       padding: 0.75rem 1rem;
 
       &:first-child {
-        border-top-left-radius: 12px;   // coin arrondi gauche
+        border-top-left-radius: $radius;
       }
       &:last-child {
-        border-top-right-radius: 12px;  // coin arrondi droit
+        border-top-right-radius: $radius;
       }
     }
   }
 
   tbody {
-    .trajet-row {
-      background-color: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-      transition: transform 0.2s, box-shadow 0.2s;
+    tr {
+      animation: fadeSlideIn 0.45s ease forwards;
 
-      &:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-      }
-
-      td.trajet-info {
+      td {
+        background-color: $white;
         padding: 0.75rem 1rem;
-        color: $text-color;
+        vertical-align: middle;
+        transition: transform $transition, box-shadow $transition;
       }
 
-      td.places-dispo {
-        font-weight: 600;
-        color: $success;
+      td:first-child {
+        border-top-left-radius: $radius;
+        border-bottom-left-radius: $radius;
+      }
+
+      td:last-child {
+        border-top-right-radius: $radius;
+        border-bottom-right-radius: $radius;
+      }
+
+      &:hover td {
+        transform: translateY(-4px);
+        box-shadow: $shadow-hover;
       }
     }
   }
 }
 
-// Alert flash
-.alert-success {
-  background-color: $success;
-  color: #fff;
-  border: none;
+.places-dispo {
+  font-weight: 700;
+  color: $success;
+}
+
+
+/* ==========================================================
+   MODALES
+========================================================== */
+.modal-content {
+  border-radius: $radius;
+  box-shadow: $shadow-hover;
+}
+
+.modal-header {
+  background-color: $primary;
+  color: $white;
+}
+
+
+/* ==========================================================
+   FORMULAIRES
+========================================================== */
+.form-control,
+.form-select {
+  border-radius: 10px;
+
+  &:focus {
+    border-color: $primary;
+    box-shadow: 0 0 0 0.2rem rgba(0, 116, 199, 0.25);
+  }
+}
+
+button {
+  border-radius: 10px;
+}
+
+
+/* ==========================================================
+   ANIMATIONS
+========================================================== */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* ==========================================================
+   RESPONSIVE
+========================================================== */
+@media (max-width: 768px) {
+  .trajet-table {
+    font-size: 0.85rem;
+
+    thead {
+      display: none;
+    }
+
+    tbody tr {
+      display: block;
+
+      td {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0.75rem;
+
+        &::before {
+          content: attr(data-label);
+          font-weight: bold;
+          color: $primary-dark;
+        }
+      }
+    }
+  }
 }

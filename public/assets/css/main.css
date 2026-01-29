@@ -1,18 +1,38 @@
+@charset "UTF-8";
+/* ==========================================================
+   VARIABLES
+========================================================== */
+/* ==========================================================
+   GLOBAL
+========================================================== */
 body {
   background-color: #f1f8fc;
   color: #384050;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
+h2, h3, h4 {
+  font-weight: 600;
+}
+
+.text-primary-dark {
+  color: #00497c;
+}
+
+/* ==========================================================
+   NAVBAR
+========================================================== */
 .navbar {
   background-color: #00497c !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
 }
 .navbar .navbar-brand {
   color: #f1f8fc !important;
   font-weight: bold;
   font-size: 1.5rem;
 }
-.navbar .nav-link, .navbar .btn {
+.navbar .nav-link,
+.navbar .btn {
   color: #f1f8fc !important;
 }
 .navbar .btn-primary {
@@ -32,6 +52,24 @@ body {
   border-color: rgb(163.0120481928, 34.9879518072, 36.578313253);
 }
 
+/* ==========================================================
+   ALERTS
+========================================================== */
+.alert-success {
+  background-color: #82b864;
+  color: #ffffff;
+  border: none;
+}
+
+.alert-danger {
+  background-color: #cd2c2e;
+  color: #ffffff;
+  border: none;
+}
+
+/* ==========================================================
+   TABLE TRAJETS = CARDS ANIMÉES
+========================================================== */
 .trajet-table {
   width: 100%;
   border-collapse: separate;
@@ -44,34 +82,104 @@ body {
   padding: 0.75rem 1rem;
 }
 .trajet-table thead th:first-child {
-  border-top-left-radius: 12px;
+  border-top-left-radius: 14px;
 }
 .trajet-table thead th:last-child {
-  border-top-right-radius: 12px;
+  border-top-right-radius: 14px;
 }
-.trajet-table tbody .trajet-row {
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s, box-shadow 0.2s;
+.trajet-table tbody tr {
+  animation: fadeSlideIn 0.45s ease forwards;
 }
-.trajet-table tbody .trajet-row:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-}
-.trajet-table tbody .trajet-row td.trajet-info {
+.trajet-table tbody tr td {
+  background-color: #ffffff;
   padding: 0.75rem 1rem;
-  color: #384050;
+  vertical-align: middle;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
-.trajet-table tbody .trajet-row td.places-dispo {
-  font-weight: 600;
+.trajet-table tbody tr td:first-child {
+  border-top-left-radius: 14px;
+  border-bottom-left-radius: 14px;
+}
+.trajet-table tbody tr td:last-child {
+  border-top-right-radius: 14px;
+  border-bottom-right-radius: 14px;
+}
+.trajet-table tbody tr:hover td {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.12);
+}
+
+.places-dispo {
+  font-weight: 700;
   color: #82b864;
 }
 
-.alert-success {
-  background-color: #82b864;
-  color: #fff;
-  border: none;
+/* ==========================================================
+   MODALES
+========================================================== */
+.modal-content {
+  border-radius: 14px;
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.12);
+}
+
+.modal-header {
+  background-color: #0074c7;
+  color: #ffffff;
+}
+
+/* ==========================================================
+   FORMULAIRES
+========================================================== */
+.form-control,
+.form-select {
+  border-radius: 10px;
+}
+.form-control:focus,
+.form-select:focus {
+  border-color: #0074c7;
+  box-shadow: 0 0 0 0.2rem rgba(0, 116, 199, 0.25);
+}
+
+button {
+  border-radius: 10px;
+}
+
+/* ==========================================================
+   ANIMATIONS
+========================================================== */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* ==========================================================
+   RESPONSIVE
+========================================================== */
+@media (max-width: 768px) {
+  .trajet-table {
+    font-size: 0.85rem;
+  }
+  .trajet-table thead {
+    display: none;
+  }
+  .trajet-table tbody tr {
+    display: block;
+  }
+  .trajet-table tbody tr td {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0.75rem;
+  }
+  .trajet-table tbody tr td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    color: #00497c;
+  }
 }
 
 /*# sourceMappingURL=main.css.map */
