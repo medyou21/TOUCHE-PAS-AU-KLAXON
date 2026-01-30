@@ -94,9 +94,7 @@ class TrajetController extends Controller
         }
     }
 
-    // =========================
     // Edition du trajet (GET + POST)
-    // =========================
     public function edit(int $id): void
     {
         if (!isset($_SESSION['user']['id'])) {
@@ -149,12 +147,43 @@ class TrajetController extends Controller
             }
 
         } else {
-            // GET : afficher formulaire prérempli
             $this->render('edit_trajet', [
                 'user' => $_SESSION['user'],
                 'trajet' => $trajet,
                 'agences' => $this->trajetModel->getAgences()
             ]);
+        }
+    }
+
+    // Suppression d’un trajet (POST)
+    public function delete(int $id): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        try {
+            if (!isset($_SESSION['user']['id'])) {
+                echo json_encode(['success'=>false,'message'=>'Connexion requise']); exit;
+            }
+
+            $trajet = $this->trajetModel->getById($id);
+            if (!$trajet) {
+                echo json_encode(['success'=>false,'message'=>'Trajet introuvable']); exit;
+            }
+
+            if ($trajet['conducteur_id'] != $_SESSION['user']['id']) {
+                echo json_encode(['success'=>false,'message'=>'Vous n’êtes pas autorisé à supprimer ce trajet']); exit;
+            }
+
+            $success = $this->trajetModel->delete($id);
+            echo json_encode([
+                'success' => $success,
+                'message' => $success ? 'Trajet supprimé avec succès' : 'Erreur lors de la suppression'
+            ]);
+            exit;
+
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['success'=>false,'message'=>'Erreur serveur']); exit;
         }
     }
 }
