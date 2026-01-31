@@ -112,24 +112,29 @@ try {
 
     // RESERVATIONS
     $pdo->exec("
-        CREATE TABLE reservations (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            trajet_id INT NOT NULL,
-            utilisateur_id INT NOT NULL,
-            date_reservation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+       CREATE TABLE reservations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    trajet_id INT NOT NULL,
+    utilisateur_id INT NOT NULL,
+    nb_places INT NOT NULL,
+    date_reservation DATETIME DEFAULT CURRENT_TIMESTAMP,
 
-            CONSTRAINT fk_res_trajet
-                FOREIGN KEY (trajet_id)
-                REFERENCES trajets(id)
-                ON DELETE CASCADE,
+    CONSTRAINT fk_res_trajet
+        FOREIGN KEY (trajet_id) REFERENCES trajets(id) ON DELETE CASCADE,
 
-            CONSTRAINT fk_res_user
-                FOREIGN KEY (utilisateur_id)
-                REFERENCES utilisateurs(id)
-                ON DELETE CASCADE,
+    CONSTRAINT fk_res_user
+        FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE,
 
-            UNIQUE (trajet_id, utilisateur_id)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    CONSTRAINT uq_reservation_unique
+        UNIQUE (trajet_id, utilisateur_id),
+
+    CONSTRAINT chk_nb_places
+        CHECK (nb_places > 0),
+
+    INDEX idx_res_trajet (trajet_id),
+    INDEX idx_res_user (utilisateur_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
     ");
 
     echo "✔ Tables créées<br>";

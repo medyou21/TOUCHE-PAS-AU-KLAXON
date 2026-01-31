@@ -14,7 +14,7 @@ $user = $_SESSION['user'] ?? null;
 
 </div>
 
-<!-- Modal pour messages -->
+<!-- Modal message -->
 <div class="modal fade" id="messageModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -30,20 +30,20 @@ $user = $_SESSION['user'] ?? null;
   </div>
 </div>
 
-<!-- Modal pour confirmation de suppression -->
+<!-- Modal suppression -->
 <div class="modal fade" id="confirmDeleteModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header bg-danger text-white">
-        <h5 class="modal-title">Confirmation de suppression</h5>
+        <h5 class="modal-title">Confirmation</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body" id="confirmDeleteBody">
+      <div class="modal-body">
         Êtes-vous sûr de vouloir supprimer ce trajet ?
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Supprimer</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button class="btn btn-danger" id="confirmDeleteBtn">Supprimer</button>
       </div>
     </div>
   </div>
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const userLoggedIn = user !== null;
     const BASE_URL = '<?= BASE_URL ?>';
 
-    let trajetToDelete = null; // ID du trajet à supprimer
+    let trajetToDelete = null;
 
     async function loadTrajets() {
         try {
@@ -75,11 +75,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     <tr class="table-primary">
                         <th>Agence départ</th>
                         <th>Date départ</th>
-                        <th>Heure départ</th>
+                        <th>Heure</th>
                         <th>Agence arrivée</th>
                         <th>Date arrivée</th>
-                        <th>Heure arrivée</th>
-                        <th>Places disponibles</th>
+                        <th>Heure</th>
+                        <th>Places</th>
                         ${userLoggedIn ? '<th>Actions</th>' : ''}
                     </tr>
                 </thead>
@@ -89,124 +89,97 @@ document.addEventListener('DOMContentLoaded', () => {
             let modals = '';
 
             trajets.forEach(t => {
-                const prenom = t.prenom ?? '';
-                const nom = t.nom ?? '';
-                const telephone = t.telephone ?? '';
-                const email = t.email ?? '';
-                const nbPlacesDisponibles = t.nb_places_disponibles ?? 0;
-                const nbPlacesTotales = t.nb_places_totales ?? 0;
 
-                let dateDepartStr = '', heureDepartStr = '', dateArriveeStr = '', heureArriveeStr = '';
-                if (t.date_depart) {
-                    const [dateD, timeD] = t.date_depart.split(' ');
-                    dateDepartStr = dateD.split('-').reverse().join('/');
-                    heureDepartStr = timeD.slice(0,5);
-                }
-                if (t.date_arrivee) {
-                    const [dateA, timeA] = t.date_arrivee.split(' ');
-                    dateArriveeStr = dateA.split('-').reverse().join('/');
-                    heureArriveeStr = timeA.slice(0,5);
-                }
+                const nbDispo = t.nb_places_disponibles ?? 0;
+                const nbTotal = t.nb_places_totales ?? 0;
+
+                const [dD, hD] = t.date_depart.split(' ');
+                const [dA, hA] = t.date_arrivee.split(' ');
 
                 html += `
-                <tr class="trajet-row">
-                    <td>${t.depart ?? ''}</td>
-                    <td>${dateDepartStr}</td>
-                    <td>${heureDepartStr}</td>
-                    <td>${t.arrivee ?? ''}</td>
-                    <td>${dateArriveeStr}</td>
-                    <td>${heureArriveeStr}</td>
-                    <td class="places-dispo">${nbPlacesDisponibles} / ${nbPlacesTotales}</td>
+                <tr>
+                    <td>${t.depart}</td>
+                    <td>${dD.split('-').reverse().join('/')}</td>
+                    <td>${hD.slice(0,5)}</td>
+                    <td>${t.arrivee}</td>
+                    <td>${dA.split('-').reverse().join('/')}</td>
+                    <td>${hA.slice(0,5)}</td>
+                    <td><strong>${nbDispo}</strong> / ${nbTotal}</td>
                 `;
 
                 if (userLoggedIn) {
-                    html += `<td>
-                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#trajetModal${t.id}">
-                            <i class="bi bi-eye"></i>
-                        </button>`;
-                    if (t.conducteur_id == user.id) {
+                    html += `<td class="d-flex gap-1 justify-content-center">`;
+
+                    // Bouton infos
+                    html += `
+                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#trajetModal${t.id}">
+                        <i class="bi bi-eye"></i>
+                    </button>`;
+
+                    // Bouton réserver (uniquement si pas conducteur et places > 0)
+                    if (user.id != t.conducteur_id && nbDispo > 0) {
                         html += `
-                            <a href="${BASE_URL}/trajet/edit/${t.id}" class="btn btn-sm btn-warning">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                            <button class="btn btn-sm btn-danger" onclick="confirmDelete(${t.id})">
-                                <i class="bi bi-trash"></i>
-                            </button>`;
+                        <a href="${BASE_URL}/trajet/reserve/${t.id}" class="btn btn-sm btn-success">
+                            <i class="bi bi-calendar-check"></i>
+                        </a>`;
                     }
+
+                    // Actions conducteur
+                    if (user.id == t.conducteur_id) {
+                        html += `
+                        <a href="${BASE_URL}/trajet/edit/${t.id}" class="btn btn-sm btn-warning">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <button class="btn btn-sm btn-danger" onclick="confirmDelete(${t.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>`;
+                    }
+
                     html += `</td>`;
                 }
 
                 html += `</tr>`;
 
-                if (userLoggedIn) {
-                    modals += `
-                    <div class="modal fade" id="trajetModal${t.id}" tabindex="-1">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content">
-                                <div class="modal-header bg-primary text-white">
-                                    <h5 class="modal-title">Informations du conducteur</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                </div>
-                                <div class="modal-body text-start">
-                                    <p><strong>Nom :</strong> ${prenom} ${nom}</p>
-                                    <p><strong>Téléphone :</strong> ${telephone}</p>
-                                    <p><strong>Email :</strong> ${email}</p>
-                                    <p><strong>Places totales :</strong> ${nbPlacesTotales}</p>
-                                </div>
+                modals += `
+                <div class="modal fade" id="trajetModal${t.id}" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title">Conducteur</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body text-start">
+                                <p><strong>Nom :</strong> ${t.prenom} ${t.nom}</p>
+                                <p><strong>Téléphone :</strong> ${t.telephone}</p>
+                                <p><strong>Email :</strong> ${t.email}</p>
                             </div>
                         </div>
-                    </div>`;
-                }
+                    </div>
+                </div>`;
             });
 
             html += `</tbody></table>`;
             container.innerHTML = html + modals;
 
-        } catch (error) {
-            console.error(error);
-            container.innerHTML = `<div class="alert alert-danger text-center">Erreur lors du chargement des trajets.</div>`;
+        } catch (e) {
+            container.innerHTML = `<div class="alert alert-danger text-center">Erreur de chargement</div>`;
         }
     }
 
-    // -------------------------------
-    // Ouvrir la modale de confirmation
-    // -------------------------------
     window.confirmDelete = function(id) {
         trajetToDelete = id;
-        const modal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
-        modal.show();
+        new bootstrap.Modal(document.getElementById('confirmDeleteModal')).show();
     };
 
-    // -------------------------------
-    // Supprimer le trajet après confirmation
-    // -------------------------------
     document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
         if (!trajetToDelete) return;
-        try {
-            const res = await fetch(`${BASE_URL}/trajet/delete/${trajetToDelete}`, { method: 'POST' });
-            const result = await res.json();
-            showModal(result.message, result.success);
-            trajetToDelete = null;
-            const modalEl = document.getElementById('confirmDeleteModal');
-            const modal = bootstrap.Modal.getInstance(modalEl);
-            modal.hide();
-            if (result.success) loadTrajets();
-        } catch (err) {
-            console.error(err);
-            showModal('Erreur serveur', false);
-        }
+        const res = await fetch(`${BASE_URL}/trajet/delete/${trajetToDelete}`, { method: 'POST' });
+        const result = await res.json();
+        document.getElementById('messageModalBody').innerText = result.message;
+        new bootstrap.Modal(document.getElementById('messageModal')).show();
+        trajetToDelete = null;
+        loadTrajets();
     });
-
-    // -------------------------------
-    // Affichage modale simple
-    // -------------------------------
-    function showModal(message, success) {
-        const modalEl = document.getElementById('messageModal');
-        if (!modalEl) return alert(message);
-        document.getElementById('messageModalBody').innerText = message;
-        const modal = new bootstrap.Modal(modalEl);
-        modal.show();
-    }
 
     loadTrajets();
 });
