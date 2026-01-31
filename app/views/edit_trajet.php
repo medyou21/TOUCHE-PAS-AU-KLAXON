@@ -86,6 +86,7 @@ $trajet = $trajet ?? null;
             <div class="col">
                 <label>Nombre de places disponibles</label>
                 <input type="number" name="nb_places_disponibles" class="form-control" min="1" 
+                       max="<?= $trajet['nb_places_totales'] ?>" 
                        value="<?= $trajet['nb_places_disponibles'] ?>" required>
             </div>
         </div>
@@ -136,30 +137,29 @@ document.getElementById('edit-trajet-form').addEventListener('submit', async e =
     if(!valid) return;
 
     try {
-        const resp = await fetch('<?= BASE_URL ?>/trajet/edit/<?= $trajet['id'] ?>',{
+        const resp = await fetch(window.location.href, { // ← envoie vers la même URL
             method:'POST',
             body:new URLSearchParams(data)
         });
 
-        const text = await resp.text();
-        let result;
-        try { result = JSON.parse(text); } 
-        catch { result={success:false,message:'Réponse serveur invalide'}; }
+        const result = await resp.json();
 
         const modalEl = document.getElementById('messageModal');
-        document.getElementById('messageModalBody').innerText = result.message||'Message inconnu';
+        document.getElementById('messageModalBody').innerText = result.message || 'Message inconnu';
         const modal = new bootstrap.Modal(modalEl);
         modal.show();
 
         if(result.success){
-            modalEl.addEventListener('hidden.bs.modal',()=>{window.location.href='<?= BASE_URL ?>/';},{once:true});
+            modalEl.addEventListener('hidden.bs.modal', () => {
+                window.location.href = '<?= BASE_URL ?>/';
+            }, {once:true});
         }
-
     } catch(err){
         console.error(err);
         const modalEl = document.getElementById('messageModal');
-        document.getElementById('messageModalBody').innerText='Erreur lors de la modification du trajet';
+        document.getElementById('messageModalBody').innerText='Erreur serveur lors de la modification';
         new bootstrap.Modal(modalEl).show();
     }
 });
 </script>
+

@@ -1,0 +1,139 @@
+<?php require_once __DIR__ . '/templates/header.php'; ?>
+
+<?php
+/** @var array $trajet */
+/** @var array $user */
+/** @var string|null $message */
+?>
+
+<div class="container my-5">
+
+    <h2 class="text-center text-success mb-4">
+        Réserver un trajet
+    </h2>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            Détails du trajet
+        </div>
+        <div class="card-body">
+
+            <p><strong>Départ :</strong> <span id="trajetDepart"><?= htmlspecialchars($trajet['depart']) ?></span></p>
+            <p><strong>Arrivée :</strong> <span id="trajetArrivee"><?= htmlspecialchars($trajet['arrivee']) ?></span></p>
+            <p><strong>Date départ :</strong> <span id="trajetDateDepart"><?= date('d/m/Y H:i', strtotime($trajet['date_depart'])) ?></span></p>
+            <p><strong>Date arrivée :</strong> <span id="trajetDateArrivee"><?= date('d/m/Y H:i', strtotime($trajet['date_arrivee'])) ?></span></p>
+            <p>
+                <strong>Places disponibles :</strong>
+                <span class="badge bg-success" id="trajetPlaces"><?= $trajet['nb_places_disponibles'] ?></span>
+            </p>
+
+            <hr>
+
+            <form id="reservationForm">
+                <div class="mb-3">
+                    <label class="form-label">Nombre de places à réserver</label>
+                    <input
+                        type="number"
+                        name="nb_places"
+                        class="form-control"
+                        min="1"
+                        max="<?= $trajet['nb_places_disponibles'] ?>"
+                        required
+                    >
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a href="<?= BASE_URL ?>/" class="btn btn-secondary">
+                        Annuler
+                    </a>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-calendar-check"></i> Réserver
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- Modal message -->
+<div class="modal fade" id="messageModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">Réservation</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="messageModalBody"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const reservationForm = document.getElementById('reservationForm');
+    const badgePlaces = document.getElementById('trajetPlaces');
+    const inputNbPlaces = reservationForm.querySelector('input[name="nb_places"]');
+    const BASE_URL = '<?= BASE_URL ?>';
+    const trajetId = <?= (int)$trajet['id'] ?>;
+
+    // Afficher modal si message initial (trajet complet ou déjà réservé)
+    <?php if(!empty($message)): ?>
+        const modalBody = document.getElementById('messageModalBody');
+        modalBody.innerText = <?= json_encode($message) ?>;
+        const modal = new bootstrap.Modal(document.getElementById('messageModal'));
+        modal.show();
+        // désactiver le formulaire
+        inputNbPlaces.disabled = true;
+        reservationForm.querySelector('button[type="submit"]').disabled = true;
+    <?php endif; ?>
+
+    // Gestion AJAX réservation
+    reservationForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+
+        try {
+            const response = await fetch(`${BASE_URL}/trajet/reserve/${trajetId}`, {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            // Afficher le message dans la modal
+            const modalBody = document.getElementById('messageModalBody');
+            modalBody.innerText = result.message;
+            const modal = new bootstrap.Modal(document.getElementById('messageModal'));
+            modal.show();
+
+            if (result.success) {
+                // Mettre à jour le nombre de places affichées
+                const currentPlaces = parseInt(badgePlaces.innerText);
+                const reserved = parseInt(inputNbPlaces.value);
+                const newPlaces = currentPlaces - reserved;
+                badgePlaces.innerText = newPlaces;
+
+                // Ajuster le max de l'input
+                inputNbPlaces.max = newPlaces;
+
+                // Désactiver si plus de places
+                if (newPlaces <= 0) {
+                    inputNbPlaces.disabled = true;
+                    reservationForm.querySelector('button[type="submit"]').disabled = true;
+                }
+            }
+
+        } catch (error) {
+            const modalBody = document.getElementById('messageModalBody');
+            modalBody.innerText = 'Erreur serveur';
+            new bootstrap.Modal(document.getElementById('messageModal')).show();
+        }
+    });
+});
+</script>

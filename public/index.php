@@ -31,9 +31,19 @@ $router->get('/logout', 'AuthController@logout');
 $router->get('/trajet/create', 'TrajetController@createForm'); // formulaire
 $router->post('/trajet/create', 'TrajetController@create');    // création
 
-$router->get('/trajet/edit/{id}', 'TrajetController@edit');
-$router->post('/trajet/edit/{id}', 'TrajetController@edit');
-$router->post('/trajet/delete/{id}', 'TrajetController@delete');
+$router->get('/trajet/edit/{id}', 'TrajetController@edit');    // GET -> formulaire prérempli
+$router->post('/trajet/edit/{id}', 'TrajetController@edit'); // POST -> mise à jour
+$router->post('/trajet/delete/{id}', 'TrajetController@delete'); // suppression
+// =======================
+// Réservation
+// =======================
+$router->get('/trajet/reserve/{id}', 'TrajetController@reserveForm'); // formulaire réservation (GET)
+$router->post('/trajet/reserve/{id}', 'TrajetController@reserve');    // réservation (POST)
+// Route pour afficher les réservations de l'utilisateur connecté
+$router->get('/reservation/mine', 'TrajetController@myReservations');
+$router->post('/reservation/cancel/{id}', 'TrajetController@cancelReservation');
+$router->post('/reservation/update/{id}', 'TrajetController@updateReservation');
+
 
 // =======================
 // Administration

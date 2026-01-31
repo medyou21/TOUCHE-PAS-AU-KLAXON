@@ -69,7 +69,12 @@ require_once __DIR__ . '/../../../config/config.php';
                         </a>
                     </li>
 
-
+                    <!-- Bouton Mes réservations -->
+                    <li class="nav-item">
+                        <a href="<?= BASE_URL ?>/reservation/mine" class="btn btn-secondary btn-sm">
+                            <i class="bi bi-card-checklist"></i> Mes réservations
+                        </a>
+                    </li>
                     <!-- Bonjour <prenom nom> -->
                     <li class="nav-item text-light small">
                         <i class="bi bi-person-circle"></i>
