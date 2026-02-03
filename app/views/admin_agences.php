@@ -1,11 +1,12 @@
 <?php require_once __DIR__ . '/templates/header.php'; ?>
 
 <div class="container my-5 text-primary">
+    <!-- Titre de la page -->
     <h2 class="text-center mb-4">
         <i class="bi bi-building"></i> Gestion des agences
     </h2>
 
-    <!-- Bouton ajout -->
+    <!-- Bouton pour ajouter une nouvelle agence -->
     <div class="text-end mb-3">
         <button class="btn btn-success"
                 data-bs-toggle="modal"
@@ -15,7 +16,7 @@
         </button>
     </div>
 
-    <!-- Liste agences -->
+    <!-- Conteneur où la liste des agences sera injectée dynamiquement -->
     <div id="agences-container" class="text-center text-muted">
         Chargement...
     </div>
@@ -28,6 +29,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
 
+            <!-- Header modal avec titre dynamique -->
             <div class="modal-header bg-warning">
                 <h5 class="modal-title" id="agenceModalTitle">
                     Ajouter une agence
@@ -35,12 +37,15 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
+            <!-- Corps modal -->
             <div class="modal-body">
-                <!-- MESSAGE -->
+                <!-- Message d'alerte (success / erreur) -->
                 <div id="agence-modal-message" class="alert d-none" role="alert"></div>
 
+                <!-- ID caché pour modification -->
                 <input type="hidden" id="agence-id">
 
+                <!-- Nom de l'agence -->
                 <div class="mb-3">
                     <label class="form-label">Nom de l’agence</label>
                     <input type="text"
@@ -50,6 +55,7 @@
                 </div>
             </div>
 
+            <!-- Footer modal -->
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-bs-dismiss="modal">
                     Annuler
@@ -76,7 +82,7 @@
             </div>
 
             <div class="modal-body">
-                <!-- MESSAGE -->
+                <!-- Message d'alerte (success / erreur) -->
                 <div id="delete-agence-message" class="alert d-none" role="alert"></div>
 
                 <p>Voulez-vous vraiment supprimer cette agence ?</p>
@@ -101,8 +107,15 @@
 const BASE_URL = "<?= BASE_URL ?>";
 
 /* =========================
- * UTILITAIRES MESSAGES
+ * FONCTIONS UTILITAIRES POUR LES MESSAGES
  * ========================= */
+
+/**
+ * Affiche un message dans une modal (success / danger / info)
+ * @param {string} id - ID de l'élément alert dans la modal
+ * @param {string} message - Texte du message
+ * @param {string} type - Type Bootstrap (success, danger, info)
+ */
 function showModalMessage(id, message, type = 'danger') {
     const el = document.getElementById(id);
     if (!el) return;
@@ -111,14 +124,22 @@ function showModalMessage(id, message, type = 'danger') {
     el.classList.remove('d-none');
 }
 
+/**
+ * Cache le message d'une modal
+ * @param {string} id - ID de l'élément alert
+ */
 function clearModalMessage(id) {
     const el = document.getElementById(id);
     if (el) el.classList.add('d-none');
 }
 
 /* =========================
- * CHARGEMENT AGENCES
+ * CHARGEMENT DES AGENCES
  * ========================= */
+
+/**
+ * Charge les agences depuis l'API JSON et affiche le tableau
+ */
 async function loadAgences() {
     const container = document.getElementById('agences-container');
 
@@ -126,12 +147,14 @@ async function loadAgences() {
         const response = await fetch(`${BASE_URL}/admin/agences/json`);
         const agences = await response.json();
 
+        // Aucun résultat
         if (!agences.length) {
             container.innerHTML =
                 `<div class="alert alert-info">Aucune agence</div>`;
             return;
         }
 
+        // Construction du tableau
         let html = `
         <table class="table trajet-table text-center align-middle">
             <thead>
@@ -150,6 +173,7 @@ async function loadAgences() {
                 <td>${a.id}</td>
                 <td>${a.nom_agence}</td>
                 <td>
+                    <!-- Modifier agence -->
                     <button class="btn btn-sm btn-primary"
                         data-bs-toggle="modal"
                         data-bs-target="#agenceModal"
@@ -157,6 +181,7 @@ async function loadAgences() {
                         <i class="bi bi-pencil"></i>
                     </button>
 
+                    <!-- Supprimer agence -->
                     <button class="btn btn-sm btn-danger"
                         data-bs-toggle="modal"
                         data-bs-target="#deleteAgenceModal"
@@ -179,8 +204,12 @@ async function loadAgences() {
 }
 
 /* =========================
- * CREATE / EDIT
+ * CREATE / EDIT AGENCE
  * ========================= */
+
+/**
+ * Ouvre la modal pour créer une nouvelle agence
+ */
 function openCreateAgence() {
     clearModalMessage('agence-modal-message');
     document.getElementById('agenceModalTitle').innerText = 'Ajouter une agence';
@@ -188,6 +217,11 @@ function openCreateAgence() {
     document.getElementById('agence-name').value = '';
 }
 
+/**
+ * Ouvre la modal pour modifier une agence existante
+ * @param {number} id - ID de l'agence
+ * @param {string} name - Nom de l'agence
+ */
 function openEditAgence(id, name) {
     clearModalMessage('agence-modal-message');
     document.getElementById('agenceModalTitle').innerText = 'Modifier l’agence';
@@ -196,7 +230,7 @@ function openEditAgence(id, name) {
 }
 
 /* =========================
- * SAVE
+ * SAVE AGENCE (CREATE / UPDATE)
  * ========================= */
 async function saveAgence() {
     const id   = document.getElementById('agence-id').value;
@@ -227,6 +261,7 @@ async function saveAgence() {
 
     showModalMessage('agence-modal-message', result.message, 'success');
 
+    // Ferme la modal et recharge la liste
     setTimeout(() => {
         bootstrap.Modal.getInstance(
             document.getElementById('agenceModal')
@@ -236,13 +271,21 @@ async function saveAgence() {
 }
 
 /* =========================
- * DELETE
+ * DELETE AGENCE
  * ========================= */
+
+/**
+ * Ouvre la modal de suppression avec ID
+ * @param {number} id - ID de l'agence
+ */
 function openDeleteAgence(id) {
     clearModalMessage('delete-agence-message');
     document.getElementById('delete-agence-id').value = id;
 }
 
+/**
+ * Confirme et supprime l'agence via API
+ */
 async function confirmDeleteAgence() {
     const id = document.getElementById('delete-agence-id').value;
     clearModalMessage('delete-agence-message');
@@ -267,5 +310,6 @@ async function confirmDeleteAgence() {
     }, 800);
 }
 
+// Chargement initial des agences
 loadAgences();
 </script>

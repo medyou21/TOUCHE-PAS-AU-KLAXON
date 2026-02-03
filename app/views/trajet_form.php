@@ -1,12 +1,15 @@
 <?php require_once __DIR__ . '/templates/header.php'; ?>
-<?php $user = $_SESSION['user'] ?? []; ?>
+<?php $user = $_SESSION['user'] ?? []; // Récupère les informations de l'utilisateur connecté ?>
 
 <div class="container my-5">
 
+    <!-- Titre de la page -->
     <h2 class="mb-4 text-primary-dark">Créer un trajet</h2>
 
+    <!-- Formulaire de création de trajet -->
     <form id="trajet-form" class="card p-4 shadow-sm" novalidate>
 
+        <!-- Informations personnelles du conducteur (readonly) -->
         <h5 class="mb-3">Informations du conducteur</h5>
         <div class="row mb-3">
             <div class="col">
@@ -19,6 +22,7 @@
             </div>
         </div>
 
+        <!-- Contact du conducteur -->
         <div class="row mb-3">
             <div class="col">
                 <label for="email" class="form-label">Email</label>
@@ -30,8 +34,10 @@
             </div>
         </div>
 
+        <!-- Informations du trajet -->
         <h5 class="mb-3">Informations du trajet</h5>
         <div class="row mb-3">
+            <!-- Sélection de l'agence de départ -->
             <div class="col">
                 <label for="depart" class="form-label">Agence départ</label>
                 <select id="depart" name="depart" class="form-select" required>
@@ -41,6 +47,8 @@
                     <?php endforeach; ?>
                 </select>
             </div>
+
+            <!-- Sélection de l'agence d'arrivée -->
             <div class="col">
                 <label for="arrivee" class="form-label">Agence arrivée</label>
                 <select id="arrivee" name="arrivee" class="form-select" required>
@@ -52,6 +60,7 @@
             </div>
         </div>
 
+        <!-- Dates et heures de départ/arrivée -->
         <div class="row mb-3">
             <div class="col">
                 <label for="date_depart" class="form-label">Date départ</label>
@@ -63,6 +72,7 @@
             </div>
         </div>
 
+        <!-- Nombre de places totales et disponibles -->
         <div class="row mb-3">
             <div class="col">
                 <label for="nb_places_totales" class="form-label">Nombre total de places</label>
@@ -74,6 +84,7 @@
             </div>
         </div>
 
+        <!-- Boutons d'action -->
         <div class="text-end">
             <a href="<?= BASE_URL ?>/" class="btn btn-secondary">Annuler</a>
             <button type="submit" class="btn btn-primary">Créer le trajet</button>
@@ -83,7 +94,10 @@
 
 </div>
 
-<!-- Modal pour messages -->
+<!-- =========================
+     MODAL MESSAGE
+     Affiche les messages de succès ou d'erreur après soumission
+========================= -->
 <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -100,20 +114,24 @@
 </div>
 
 <script>
+/**
+ * Gestion de la soumission du formulaire de création de trajet
+ */
 document.getElementById('trajet-form').addEventListener('submit', async e => {
-    e.preventDefault();
+    e.preventDefault(); // Empêche le rechargement de la page
     const form = e.target;
     const formData = new FormData(form);
-    const data = Object.fromEntries(formData.entries());
+    const data = Object.fromEntries(formData.entries()); // Transforme en objet JS
 
-    // Reset classes
+    // Réinitialisation des classes de validation
     ['depart','arrivee','date_depart','date_arrivee','nb_places_totales','nb_places_disponibles'].forEach(name => {
         form[name].classList.remove('is-invalid','is-valid');
     });
 
-    // Validation simple
+    // Validation simple côté client
     let valid = true;
 
+    // Vérifie que départ et arrivée sont différents
     if (data.depart === data.arrivee) {
         form.depart.classList.add('is-invalid');
         form.arrivee.classList.add('is-invalid');
@@ -123,6 +141,7 @@ document.getElementById('trajet-form').addEventListener('submit', async e => {
         form.arrivee.classList.add('is-valid');
     }
 
+    // Vérifie que la date d'arrivée est après la date de départ
     if (data.date_arrivee <= data.date_depart) {
         form.date_arrivee.classList.add('is-invalid');
         valid = false;
@@ -131,6 +150,7 @@ document.getElementById('trajet-form').addEventListener('submit', async e => {
         form.date_arrivee.classList.add('is-valid');
     }
 
+    // Vérifie que le nombre de places disponibles n'excède pas le total
     if (parseInt(data.nb_places_disponibles) > parseInt(data.nb_places_totales)) {
         form.nb_places_disponibles.classList.add('is-invalid');
         valid = false;
@@ -139,24 +159,32 @@ document.getElementById('trajet-form').addEventListener('submit', async e => {
         form.nb_places_disponibles.classList.add('is-valid');
     }
 
+    // Si invalid, on stoppe la soumission
     if (!valid) return;
 
     try {
+        // Envoi des données au serveur
         const resp = await fetch('<?= BASE_URL ?>/trajet/create', {
             method: 'POST',
             body: new URLSearchParams(data)
         });
 
+        // Lecture de la réponse
         const text = await resp.text();
         let result;
-        try { result = JSON.parse(text); } 
-        catch { result = { success: false, message: 'Réponse serveur invalide' }; }
+        try { 
+            result = JSON.parse(text); 
+        } catch { 
+            result = { success: false, message: 'Réponse serveur invalide' }; 
+        }
 
+        // Affiche le message dans le modal
         const modalEl = document.getElementById('messageModal');
         document.getElementById('messageModalBody').innerText = result.message || 'Message inconnu';
         const modal = new bootstrap.Modal(modalEl);
         modal.show();
 
+        // Redirection après succès
         if (result.success) {
             modalEl.addEventListener('hidden.bs.modal', () => {
                 window.location.href = '<?= BASE_URL ?>/';

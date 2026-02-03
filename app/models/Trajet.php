@@ -1,20 +1,54 @@
 <?php
+
 namespace App\Models;
 
 use App\Core\Database;
 use PDO;
 
+/**
+ * ----------------------------------------------------
+ * Modèle Trajet
+ * ----------------------------------------------------
+ * Responsabilités :
+ *  - Création / modification / suppression des trajets
+ *  - Récupération des trajets disponibles
+ *  - Récupération avec agences et conducteur
+ *  - Gestion du nombre de places
+ *  - Statistiques (dashboard admin)
+ *
+ * Respecte les règles métier :
+ *  - Trajets futurs uniquement
+ *  - Places disponibles cohérentes
+ *  - Sécurisation SQL (requêtes préparées)
+ * ----------------------------------------------------
+ */
 class Trajet
 {
+    /**
+     * Instance PDO
+     *
+     * @var PDO
+     */
     private PDO $db;
 
+    /**
+     * Constructeur
+     * Récupère la connexion PDO depuis Database (singleton)
+     */
     public function __construct()
     {
         $this->db = Database::getInstance();
     }
 
     /**
-     * Récupère les trajets disponibles (date future + places disponibles)
+     * ==================================================
+     * RÉCUPÉRER LES TRAJETS DISPONIBLES
+     * ==================================================
+     * - Date de départ future
+     * - Places disponibles > 0
+     * - Jointures agences + conducteur
+     *
+     * @return array
      */
     public function getAvailableTrajets(): array
     {
@@ -26,12 +60,11 @@ class Trajet
                 u.prenom,
                 u.nom,
                 u.email,
-                u.telephone,
-                t.conducteur_id
+                u.telephone
             FROM trajets t
-            INNER JOIN agences a1 ON t.agence_depart_id = a1.id
-            INNER JOIN agences a2 ON t.agence_arrivee_id = a2.id
-            INNER JOIN utilisateurs u ON t.conducteur_id = u.id
+            JOIN agences a1 ON t.agence_depart_id = a1.id
+            JOIN agences a2 ON t.agence_arrivee_id = a2.id
+            JOIN utilisateurs u ON t.conducteur_id = u.id
             WHERE t.nb_places_disponibles > 0
               AND t.date_depart > NOW()
             ORDER BY t.date_depart ASC
@@ -44,13 +77,22 @@ class Trajet
     }
 
     /**
-     * Crée un nouveau trajet
+     * ==================================================
+     * CRÉER UN NOUVEAU TRAJET
+     * ==================================================
+     * - Initialise nb_places_disponibles
+     * - Empêche dépassement des places totales
+     *
+     * @param array $data
+     * @return bool
      */
     public function create(array $data): bool
     {
-        $places_disponibles = $data['nb_places_disponibles'] ?? $data['nb_places_totales'];
-        // S'assurer que nb_places_disponibles <= nb_places_totales
-        $places_disponibles = min($places_disponibles, $data['nb_places_totales']);
+        // Si nb_places_disponibles non fourni → égal au total
+        $placesDispo = $data['nb_places_disponibles'] ?? $data['nb_places_totales'];
+
+        // Sécurité : places_disponibles <= places_totales
+        $placesDispo = min($placesDispo, $data['nb_places_totales']);
 
         $sql = "
             INSERT INTO trajets (
@@ -66,8 +108,8 @@ class Trajet
                 :arrivee,
                 :date_depart,
                 :date_arrivee,
-                :places_totales,
-                :places_disponibles,
+                :totales,
+                :disponibles,
                 :conducteur
             )
         ";
@@ -75,18 +117,22 @@ class Trajet
         $stmt = $this->db->prepare($sql);
 
         return $stmt->execute([
-            ':depart'             => $data['depart'],
-            ':arrivee'            => $data['arrivee'],
-            ':date_depart'        => $data['date_depart'],
-            ':date_arrivee'       => $data['date_arrivee'],
-            ':places_totales'     => $data['nb_places_totales'],
-            ':places_disponibles' => $places_disponibles,
-            ':conducteur'         => $data['conducteur_id']
+            ':depart'        => $data['depart'],
+            ':arrivee'       => $data['arrivee'],
+            ':date_depart'   => $data['date_depart'],
+            ':date_arrivee'  => $data['date_arrivee'],
+            ':totales'       => $data['nb_places_totales'],
+            ':disponibles'   => $placesDispo,
+            ':conducteur'    => $data['conducteur_id']
         ]);
     }
 
     /**
-     * Récupère toutes les agences
+     * ==================================================
+     * RÉCUPÉRER LA LISTE DES AGENCES
+     * ==================================================
+     *
+     * @return array
      */
     public function getAgences(): array
     {
@@ -100,7 +146,12 @@ class Trajet
     }
 
     /**
-     * Récupère un trajet par son ID
+     * ==================================================
+     * RÉCUPÉRER UN TRAJET PAR ID
+     * ==================================================
+     *
+     * @param int $id
+     * @return array|null
      */
     public function getById(int $id): ?array
     {
@@ -110,120 +161,172 @@ class Trajet
             WHERE id = :id
         ");
         $stmt->execute([':id' => $id]);
-        $trajet = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        return $trajet ?: null;
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
     /**
-     * Met à jour un trajet
+     * ==================================================
+     * METTRE À JOUR UN TRAJET
+     * ==================================================
+     * - Empêche nb_places_disponibles > nb_places_totales
+     *
+     * @param int $id
+     * @param array $data
+     * @return bool
      */
-  public function update(int $id, array $data): bool
-{
-    $places_disponibles = min($data['nb_places_disponibles'], $data['nb_places_totales']);
+    public function update(int $id, array $data): bool
+    {
+        $placesDispo = min(
+            $data['nb_places_disponibles'],
+            $data['nb_places_totales']
+        );
 
-    $sql = "
-        UPDATE trajets SET
-            agence_depart_id = :depart,
-            agence_arrivee_id = :arrivee,
-            date_depart = :date_depart,
-            date_arrivee = :date_arrivee,
-            nb_places_totales = :places_totales,
-            nb_places_disponibles = :places_disponibles
-        WHERE id = :id
-    ";
+        $sql = "
+            UPDATE trajets SET
+                agence_depart_id = :depart,
+                agence_arrivee_id = :arrivee,
+                date_depart = :date_depart,
+                date_arrivee = :date_arrivee,
+                nb_places_totales = :totales,
+                nb_places_disponibles = :disponibles
+            WHERE id = :id
+        ";
 
-    $stmt = $this->db->prepare($sql);
-    $success = $stmt->execute([
-        ':depart'             => $data['depart'],
-        ':arrivee'            => $data['arrivee'],
-        ':date_depart'        => $data['date_depart'],
-        ':date_arrivee'       => $data['date_arrivee'],
-        ':places_totales'     => $data['nb_places_totales'],
-        ':places_disponibles' => $places_disponibles,
-        ':id'                 => $id
-    ]);
+        $stmt = $this->db->prepare($sql);
 
-    if(!$success){
-        $errorInfo = $stmt->errorInfo();
-        error_log("Update trajet failed: " . implode(' | ', $errorInfo));
+        $success = $stmt->execute([
+            ':depart'       => $data['depart'],
+            ':arrivee'      => $data['arrivee'],
+            ':date_depart'  => $data['date_depart'],
+            ':date_arrivee' => $data['date_arrivee'],
+            ':totales'      => $data['nb_places_totales'],
+            ':disponibles'  => $placesDispo,
+            ':id'           => $id
+        ]);
+
+        // Log technique en cas d’échec (debug prod)
+        if (!$success) {
+            error_log("Erreur update trajet ID=$id");
+        }
+
+        return $success;
     }
 
-    return $success;
-}
-
     /**
-     * Supprime un trajet
+     * ==================================================
+     * SUPPRIMER UN TRAJET
+     * ==================================================
+     *
+     * @param int $id
+     * @return bool
      */
     public function delete(int $id): bool
     {
-        $stmt = $this->db->prepare("DELETE FROM trajets WHERE id = :id");
+        $stmt = $this->db->prepare("
+            DELETE FROM trajets WHERE id = :id
+        ");
+
         return $stmt->execute([':id' => $id]);
     }
+
     /**
- * Récupère un trajet avec agences + conducteur
- */
-public function getByIdWithAgences(int $id): ?array
-{
-    $sql = "
-        SELECT
-            t.*,
-            a1.nom_agence AS depart,
-            a2.nom_agence AS arrivee
-        FROM trajets t
-        JOIN agences a1 ON t.agence_depart_id = a1.id
-        JOIN agences a2 ON t.agence_arrivee_id = a2.id
-        WHERE t.id = ?
-    ";
+     * ==================================================
+     * RÉCUPÉRER UN TRAJET AVEC AGENCES
+     * ==================================================
+     *
+     * @param int $id
+     * @return array|null
+     */
+    public function getByIdWithAgences(int $id): ?array
+    {
+        $sql = "
+            SELECT
+                t.*,
+                a1.nom_agence AS depart,
+                a2.nom_agence AS arrivee
+            FROM trajets t
+            JOIN agences a1 ON t.agence_depart_id = a1.id
+            JOIN agences a2 ON t.agence_arrivee_id = a2.id
+            WHERE t.id = :id
+        ";
 
-    $stmt = $this->db->prepare($sql);
-    $stmt->execute([$id]); // ✅ CORRECT
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':id' => $id]);
 
-    $trajet = $stmt->fetch(PDO::FETCH_ASSOC);
-    return $trajet ?: null;
-}
-/**
- * Récupère un trajet par ID et verrouille la ligne pour update (SELECT ... FOR UPDATE)
- */
-public function getByIdForUpdate(int $id): ?array
-{
-    $sql = "
-        SELECT *
-        FROM trajets
-        WHERE id = :id
-        FOR UPDATE
-    ";
-    $stmt = $this->db->prepare($sql);
-    $stmt->execute([':id' => $id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
 
-    $trajet = $stmt->fetch(\PDO::FETCH_ASSOC);
-    return $trajet ?: null;
-}
+    /**
+     * ==================================================
+     * RÉCUPÉRER UN TRAJET AVEC VERROU SQL
+     * ==================================================
+     * Utilisé lors des réservations (FOR UPDATE)
+     *
+     * @param int $id
+     * @return array|null
+     */
+    public function getByIdForUpdate(int $id): ?array
+    {
+        $sql = "
+            SELECT *
+            FROM trajets
+            WHERE id = :id
+            FOR UPDATE
+        ";
 
-/**
- * Met à jour uniquement le nombre de places disponibles
- */
-public function updateAvailablePlaces(int $id, int $newPlaces): bool
-{
-    $sql = "UPDATE trajets SET nb_places_disponibles = :places WHERE id = :id";
-    $stmt = $this->db->prepare($sql);
-    return $stmt->execute([
-        ':places' => $newPlaces,
-        ':id' => $id
-    ]);
-}
-public function countActifs(): int
-{
-    $sql = "SELECT COUNT(*) FROM trajets WHERE date_depart > NOW()";
-    return (int)$this->db->query($sql)->fetchColumn();
-}
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':id' => $id]);
 
-/**
- * Récupère le nombre de trajets pour les derniers X jours (par défaut 30 jours)
- * @param int $days
- * @return array ['labels'=>[], 'data'=>[]]
- */
-public function getTrajetsLastDays(int $days = 7): array
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    /**
+     * ==================================================
+     * METTRE À JOUR UNIQUEMENT LES PLACES DISPONIBLES
+     * ==================================================
+     *
+     * @param int $id
+     * @param int $newPlaces
+     * @return bool
+     */
+    public function updateAvailablePlaces(int $id, int $newPlaces): bool
+    {
+        $stmt = $this->db->prepare("
+            UPDATE trajets
+            SET nb_places_disponibles = :places
+            WHERE id = :id
+        ");
+
+        return $stmt->execute([
+            ':places' => $newPlaces,
+            ':id'     => $id
+        ]);
+    }
+
+    /**
+     * ==================================================
+     * STATISTIQUE : NOMBRE DE TRAJETS ACTIFS
+     * ==================================================
+     *
+     * @return int
+     */
+    public function countActifs(): int
+    {
+        return (int) $this->db
+            ->query("SELECT COUNT(*) FROM trajets WHERE date_depart > NOW()")
+            ->fetchColumn();
+    }
+
+    /**
+     * ==================================================
+     * STATISTIQUE : TRAJETS SUR LES DERNIERS JOURS
+     * ==================================================
+     *
+     * @param int $days
+     * @return array
+     */
+    public function getTrajetsLastDays(int $days = 7): array
 {
     $sql = "
         SELECT DATE(date_depart) AS date, COUNT(*) AS count
@@ -240,6 +343,5 @@ public function getTrajetsLastDays(int $days = 7): array
     // Retourne le tableau brut
     return $rows ?: [];
 }
-
 
 }

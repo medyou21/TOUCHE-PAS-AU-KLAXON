@@ -1,23 +1,28 @@
 <?php require_once __DIR__ . '/templates/header.php'; ?>
 
 <?php
-/** @var array $trajet */
-/** @var array $user */
-/** @var string|null $message */
+/** 
+ * @var array $trajet   // Contient les informations du trajet à réserver
+ * @var array $user     // Données de l'utilisateur connecté
+ * @var string|null $message // Message à afficher (trajet complet, erreur, etc.)
+ */
 ?>
 
 <div class="container my-5">
 
+    <!-- Titre de la page -->
     <h2 class="text-center text-success mb-4">
         Réserver un trajet
     </h2>
 
+    <!-- Carte contenant les détails du trajet -->
     <div class="card shadow-sm">
         <div class="card-header bg-primary text-white">
             Détails du trajet
         </div>
         <div class="card-body">
 
+            <!-- Informations principales du trajet -->
             <p><strong>Départ :</strong> <span id="trajetDepart"><?= htmlspecialchars($trajet['depart']) ?></span></p>
             <p><strong>Arrivée :</strong> <span id="trajetArrivee"><?= htmlspecialchars($trajet['arrivee']) ?></span></p>
             <p><strong>Date départ :</strong> <span id="trajetDateDepart"><?= date('d/m/Y H:i', strtotime($trajet['date_depart'])) ?></span></p>
@@ -29,7 +34,10 @@
 
             <hr>
 
+            <!-- Formulaire de réservation -->
             <form id="reservationForm" aria-describedby="reservationInfo">
+
+                <!-- Champ pour le nombre de places -->
                 <div class="mb-3">
                     <label for="nb_places" class="form-label">Nombre de places à réserver</label>
                     <input
@@ -38,13 +46,16 @@
                         name="nb_places"
                         class="form-control"
                         min="1"
-                        max="<?= $trajet['nb_places_disponibles'] ?>"
+                        max="<?= $trajet['nb_places_disponibles'] ?>"  
                         required
                         aria-describedby="maxPlacesInfo"
-                    >
-                    <div id="maxPlacesInfo" class="form-text">Maximum <?= $trajet['nb_places_disponibles'] ?> places disponibles</div>
+                    > <!-- Limite selon la disponibilité -->
+                    <div id="maxPlacesInfo" class="form-text">
+                        Maximum <?= $trajet['nb_places_disponibles'] ?> places disponibles
+                    </div>
                 </div>
 
+                <!-- Boutons annuler / réserver -->
                 <div class="d-flex justify-content-between">
                     <a href="<?= BASE_URL ?>/" class="btn btn-secondary" aria-label="Annuler la réservation">
                         Annuler
@@ -53,6 +64,7 @@
                         <i class="bi bi-calendar-check"></i> Réserver
                     </button>
                 </div>
+
             </form>
 
         </div>
@@ -60,7 +72,7 @@
 
 </div>
 
-<!-- Modal message -->
+<!-- ================= MODAL MESSAGE ================= -->
 <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -76,6 +88,7 @@
   </div>
 </div>
 
+<!-- ================= JAVASCRIPT ================= -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const reservationForm = document.getElementById('reservationForm');
@@ -84,18 +97,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const BASE_URL = '<?= BASE_URL ?>';
     const trajetId = <?= (int)$trajet['id'] ?>;
 
-    // Afficher modal si message initial (trajet complet ou déjà réservé)
+    // ================= MESSAGE INITIAL =================
     <?php if(!empty($message)): ?>
         const modalBody = document.getElementById('messageModalBody');
         modalBody.innerText = <?= json_encode($message) ?>;
         const modal = new bootstrap.Modal(document.getElementById('messageModal'));
         modal.show();
-        // désactiver le formulaire
+
+        // Désactiver le formulaire si réservation impossible
         inputNbPlaces.disabled = true;
         reservationForm.querySelector('button[type="submit"]').disabled = true;
     <?php endif; ?>
 
-    // Gestion AJAX réservation
+    // ================= AJAX RÉSERVATION =================
     reservationForm.addEventListener('submit', async function (e) {
         e.preventDefault();
 
@@ -116,7 +130,6 @@ document.addEventListener('DOMContentLoaded', function() {
             modal.show();
 
             if (result.success) {
-                // Redirection vers l'accueil après succès
                 setTimeout(() => {
                     window.location.href = `${BASE_URL}/`;
                 }, 1500);
