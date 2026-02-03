@@ -48,7 +48,29 @@ $router->post('/reservation/update/{id}', 'TrajetController@updateReservation');
 // =======================
 // Administration
 // =======================
+/*
+|--------------------------------------------------------------------------
+| Administration
+|--------------------------------------------------------------------------
+*/
 $router->get('/admin/dashboard', 'AdminController@index');
+$router->get('/admin/stats/json', 'AdminController@statsJson');
 
+/* -------- UTILISATEURS -------- */
+$router->get('/admin/users', 'AdminController@users');
+$router->get('/admin/users/json', 'AdminController@usersJson');
+
+
+/* -------- AGENCES -------- */
+$router->get('/admin/agences', 'AdminController@agences');
+$router->get('/admin/agences/json', 'AdminController@agencesJson');
+$router->post('/admin/create-agence', 'AdminController@createAgence');
+$router->post('/admin/update-agence', 'AdminController@updateAgence');
+$router->post('/admin/delete-agence/{id}', 'AdminController@deleteAgence');
+
+/* -------- TRAJETS -------- */
+$router->get('/admin/trajets', 'AdminController@trajets');
+$router->get('/admin/trajets/json', 'AdminController@trajetsJson');
+$router->post('/admin/delete-trajet/{id}', 'AdminController@deleteTrajet');
 // Lancer le router
 $router->run();
