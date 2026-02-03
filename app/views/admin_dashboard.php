@@ -1,34 +1,39 @@
 <?php
+// Inclure le header commun (navigation, SEO, CSS)
 require_once __DIR__ . '/templates/header.php';
 ?>
 
 <div class="container my-5">
 
+    <!-- Titre du dashboard -->
     <h2 class="text-center mb-5 text-primary">
         <i class="bi bi-speedometer2" aria-hidden="true"></i> Tableau de bord Administrateur
     </h2>
 
+    <!-- Spinner de chargement initial -->
     <div id="dashboardLoading" class="text-center mb-4">
         <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
         <span class="ms-2">Chargement des statistiques...</span>
     </div>
 
+    <!-- Contenu du dashboard, caché tant que les stats ne sont pas chargées -->
     <div id="dashboardContent" class="d-none">
 
         <div class="row g-4 mb-5">
 
-            <!-- UTILISATEURS -->
+            <!-- Carte Utilisateurs -->
             <div class="col-md-3">
                 <div class="card shadow-sm text-center border-0" role="region" aria-labelledby="statUsersLabel">
                     <div class="card-body">
                         <i class="bi bi-people fs-1 text-warning" aria-hidden="true"></i>
                         <h5 id="statUsersLabel" class="mt-3">Utilisateurs</h5>
+                        <!-- Compteur animé -->
                         <h2 class="stat-counter" id="stat-users">0</h2>
                     </div>
                 </div>
             </div>
 
-            <!-- AGENCES -->
+            <!-- Carte Agences -->
             <div class="col-md-3">
                 <div class="card shadow-sm text-center border-0" role="region" aria-labelledby="statAgencesLabel">
                     <div class="card-body">
@@ -39,7 +44,7 @@ require_once __DIR__ . '/templates/header.php';
                 </div>
             </div>
 
-            <!-- TRAJETS -->
+            <!-- Carte Trajets -->
             <div class="col-md-3">
                 <div class="card shadow-sm text-center border-0" role="region" aria-labelledby="statTrajetsLabel">
                     <div class="card-body">
@@ -50,7 +55,7 @@ require_once __DIR__ . '/templates/header.php';
                 </div>
             </div>
 
-            <!-- TRAJETS ACTIFS -->
+            <!-- Carte Trajets actifs -->
             <div class="col-md-3">
                 <div class="card shadow-sm text-center border-0" role="region" aria-labelledby="statTrajetsActifsLabel">
                     <div class="card-body">
@@ -63,12 +68,14 @@ require_once __DIR__ . '/templates/header.php';
 
         </div>
 
-        <!-- Graphiques -->
+        <!-- Section des graphiques -->
         <div class="row">
             <div class="col-md-6 mb-4">
+                <!-- Graphique Trajets par jour -->
                 <canvas id="trajetsChart" aria-label="Graphique des trajets par jour" role="img"></canvas>
             </div>
             <div class="col-md-6 mb-4">
+                <!-- Graphique Utilisateurs par rôle -->
                 <canvas id="usersChart" aria-label="Graphique des utilisateurs par rôle" role="img"></canvas>
             </div>
         </div>
@@ -77,12 +84,15 @@ require_once __DIR__ . '/templates/header.php';
 
 </div>
 
-<!-- Chart.js -->
+<!-- Chart.js pour les graphiques -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
 const BASE_URL = '<?= BASE_URL ?>';
 
+/**
+ * Récupère les statistiques depuis le serveur (JSON)
+ */
 async function fetchStats() {
     try {
         const res = await fetch(`${BASE_URL}/admin/stats/json`);
@@ -95,44 +105,50 @@ async function fetchStats() {
     }
 }
 
-// Animation compteur
+/**
+ * Animation d'un compteur numérique
+ * @param el Élément HTML
+ * @param target Valeur finale
+ */
 function animateCounter(el, target) {
     let current = 0;
-    const step = Math.max(1, Math.ceil(target / 50));
+    const step = Math.max(1, Math.ceil(target / 50)); // 50 étapes max
     const interval = setInterval(() => {
         current += step;
         if(current >= target) {
-            el.innerText = target;
+            el.innerText = target; // Fin de l'animation
             clearInterval(interval);
         } else {
             el.innerText = current;
         }
-    }, 20);
+    }, 20); // Mise à jour toutes les 20ms
 }
 
-// Initialisation dashboard
+/**
+ * Initialise et met à jour le dashboard
+ */
 async function updateDashboard() {
     const stats = await fetchStats();
 
-    // Masquer spinner, afficher contenu
+    // Masquer le spinner et afficher le contenu
     document.getElementById('dashboardLoading').classList.add('d-none');
     document.getElementById('dashboardContent').classList.remove('d-none');
 
-    // Compteurs animés
+    // Mettre à jour les compteurs animés
     animateCounter(document.getElementById('stat-users'), stats.users ?? 0);
     animateCounter(document.getElementById('stat-agences'), stats.agences ?? 0);
     animateCounter(document.getElementById('stat-trajets'), stats.trajets ?? 0);
     animateCounter(document.getElementById('stat-trajets-actifs'), stats.trajets_actifs ?? 0);
 
-    // Graphiques
+    // Contextes pour les graphiques
     const trajetsChartCtx = document.getElementById('trajetsChart').getContext('2d');
     const usersChartCtx = document.getElementById('usersChart').getContext('2d');
 
-    // Détruire anciens charts si existent
+    // Détruire les anciens charts si déjà existants (rafraîchissement)
     if(window.trajetsChartInstance) window.trajetsChartInstance.destroy();
     if(window.usersChartInstance) window.usersChartInstance.destroy();
 
-    // Trajets par jour
+    // Graphique Trajets par jour
     window.trajetsChartInstance = new Chart(trajetsChartCtx, {
         type: 'bar',
         data: {
@@ -149,7 +165,7 @@ async function updateDashboard() {
         }
     });
 
-    // Utilisateurs par rôle
+    // Graphique Utilisateurs par rôle
     window.usersChartInstance = new Chart(usersChartCtx, {
         type: 'doughnut',
         data: {
@@ -171,7 +187,7 @@ async function updateDashboard() {
     });
 }
 
-// Premier chargement + refresh toutes les 30s
+// Chargement initial + actualisation toutes les 30 secondes
 updateDashboard();
 setInterval(updateDashboard, 30000);
 </script>

@@ -1,58 +1,81 @@
 <?php
+
 namespace App\Core;
 
 /**
- * Classe de base pour tous les contrôleurs
+ * ----------------------------------------------------
+ * Classe Controller (classe de base)
+ * ----------------------------------------------------
+ * Tous les contrôleurs de l'application héritent
+ * de cette classe.
+ *
+ * Elle fournit des méthodes communes :
+ *  - chargement des vues
+ *  - rendu avec header / footer
+ *  - redirections HTTP
+ * ----------------------------------------------------
  */
 class Controller
 {
     /**
-     * Charge une vue simple (sans header/footer)
+     * Charge une vue simple (sans header ni footer)
+     * Utile pour :
+     *  - appels AJAX
+     *  - pages partielles
+     *  - modales
      *
      * @param string $view Nom de la vue (relatif à app/Views)
-     * @param array $data Données à passer à la vue
+     * @param array  $data Données à transmettre à la vue
      */
     protected function view(string $view, array $data = []): void
     {
+        // Rend les clés du tableau $data accessibles comme variables
         extract($data);
+
+        // Chemin complet vers le fichier de vue
         $viewFile = __DIR__ . '/../Views/' . $view . '.php';
 
+        // Inclusion de la vue si elle existe
         if (file_exists($viewFile)) {
             require $viewFile;
         } else {
+            // Message d'erreur explicite en cas de vue manquante
             echo "Erreur : la vue $viewFile n'existe pas";
         }
     }
 
     /**
-     * Charge une vue avec header et footer automatiquement
+     * Charge une vue complète avec header et footer
+     * Méthode la plus utilisée pour les pages HTML classiques
      *
      * @param string $view Nom de la vue (relatif à app/Views)
-     * @param array $data Données à passer à la vue
+     * @param array  $data Données à transmettre à la vue
      */
     protected function render(string $view, array $data = []): void
     {
+        // Rend les données accessibles dans la vue
         extract($data);
 
-        $header = __DIR__ . '/../Views/templates/header.php';
-        $footer = __DIR__ . '/../Views/templates/footer.php';
+        // Définition des chemins des fichiers
+        $header   = __DIR__ . '/../Views/templates/header.php';
+        $footer   = __DIR__ . '/../Views/templates/footer.php';
         $viewFile = __DIR__ . '/../Views/' . $view . '.php';
 
-        // Inclure header
+        // Inclusion du header
         if (file_exists($header)) {
             require $header;
         } else {
             echo "Erreur : le header $header n'existe pas";
         }
 
-        // Inclure la vue
+        // Inclusion de la vue principale
         if (file_exists($viewFile)) {
             require $viewFile;
         } else {
             echo "Erreur : la vue $viewFile n'existe pas";
         }
 
-        // Inclure footer
+        // Inclusion du footer
         if (file_exists($footer)) {
             require $footer;
         } else {
@@ -61,9 +84,10 @@ class Controller
     }
 
     /**
-     * Redirige vers une URL donnée
+     * Effectue une redirection HTTP
+     * Stoppe immédiatement l'exécution du script
      *
-     * @param string $url
+     * @param string $url URL de destination
      */
     protected function redirect(string $url): void
     {

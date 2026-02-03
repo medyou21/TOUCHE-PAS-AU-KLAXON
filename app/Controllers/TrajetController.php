@@ -1,91 +1,143 @@
 <?php
+
 namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\Trajet;
-use App\Models\Reservation; // <-- obligatoire !
+use App\Models\Reservation; // Gestion des réservations
 use App\Core\Database;
 use Throwable;
 
-
+/**
+ * ----------------------------------------------------
+ * Contrôleur Trajet
+ * Gère :
+ *  - l'affichage des trajets
+ *  - la création / modification / suppression
+ *  - les réservations
+ *  - les trajets de l'utilisateur
+ * ----------------------------------------------------
+ */
 class TrajetController extends Controller
 {
+    /** @var Trajet */
     private Trajet $trajetModel;
 
+    /**
+     * Constructeur
+     * - Démarre la session si nécessaire
+     * - Initialise le modèle Trajet
+     */
     public function __construct()
     {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
+
         $this->trajetModel = new Trajet();
     }
 
-    // Page d'accueil
+    /* =====================================================
+     * PAGE D'ACCUEIL
+     * ===================================================== */
+
+    /**
+     * Page d'accueil
+     * Affiche la liste des trajets disponibles
+     */
     public function home(): void
     {
         $user = $_SESSION['user'] ?? null;
         $this->render('home', ['user' => $user]);
     }
 
-    // JSON pour AJAX
+    /**
+     * Liste des trajets disponibles (JSON)
+     * Utilisée pour les appels AJAX
+     */
     public function listJson(): void
     {
         header('Content-Type: application/json; charset=utf-8');
+
         try {
             echo json_encode($this->trajetModel->getAvailableTrajets());
         } catch (Throwable $e) {
             http_response_code(500);
-            echo json_encode(['success'=>false,'message'=>'Erreur serveur : '.$e->getMessage()]);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Erreur serveur : ' . $e->getMessage()
+            ]);
         }
     }
 
-    // Formulaire création
+    /* =====================================================
+     * CRÉATION DE TRAJET
+     * ===================================================== */
+
+    /**
+     * Affiche le formulaire de création d’un trajet
+     * Accessible uniquement aux utilisateurs connectés
+     */
     public function createForm(): void
     {
         if (!isset($_SESSION['user'])) {
             header('Location: ' . BASE_URL . '/login');
             exit;
         }
+
         $this->render('trajet_form', [
-            'user' => $_SESSION['user'],
+            'user'    => $_SESSION['user'],
             'agences' => $this->trajetModel->getAgences()
         ]);
     }
 
-    // Création (POST)
+    /**
+     * Création d’un trajet (POST / AJAX)
+     */
     public function create(): void
     {
         header('Content-Type: application/json; charset=utf-8');
 
         try {
+            // Vérification connexion
             if (!isset($_SESSION['user']['id'])) {
-                echo json_encode(['success'=>false,'message'=>'Connexion requise']); exit;
+                echo json_encode(['success' => false, 'message' => 'Connexion requise']);
+                exit;
             }
 
-            $required = ['depart','arrivee','date_depart','date_arrivee','nb_places_totales'];
+            // Vérification des champs obligatoires
+            $required = ['depart', 'arrivee', 'date_depart', 'date_arrivee', 'nb_places_totales'];
             foreach ($required as $field) {
                 if (empty($_POST[$field])) {
-                    echo json_encode(['success'=>false,'message'=>"Champ manquant : $field"]); exit;
+                    echo json_encode(['success' => false, 'message' => "Champ manquant : $field"]);
+                    exit;
                 }
             }
 
+            // Préparation des données
             $data = [
-                'depart' => (int) $_POST['depart'],
-                'arrivee' => (int) $_POST['arrivee'],
-                'date_depart' => $_POST['date_depart'],
-                'date_arrivee' => $_POST['date_arrivee'],
-                'nb_places_totales' => (int) $_POST['nb_places_totales'],
-                'conducteur_id' => (int) $_SESSION['user']['id']
+                'depart'               => (int) $_POST['depart'],
+                'arrivee'              => (int) $_POST['arrivee'],
+                'date_depart'          => $_POST['date_depart'],
+                'date_arrivee'         => $_POST['date_arrivee'],
+                'nb_places_totales'    => (int) $_POST['nb_places_totales'],
+                'conducteur_id'        => (int) $_SESSION['user']['id']
             ];
 
+            // Validation métier
             if ($data['depart'] === $data['arrivee']) {
-                echo json_encode(['success'=>false,'message'=>'Les agences doivent être différentes']); exit;
-            }
-            if ($data['date_arrivee'] <= $data['date_depart']) {
-                echo json_encode(['success'=>false,'message'=>'La date d’arrivée doit être après le départ']); exit;
+                echo json_encode(['success' => false, 'message' => 'Les agences doivent être différentes']);
+                exit;
             }
 
+            if ($data['date_arrivee'] <= $data['date_depart']) {
+                echo json_encode(['success' => false, 'message' => 'La date d’arrivée doit être après le départ']);
+                exit;
+            }
+
+            // Création du trajet
             $success = $this->trajetModel->create($data);
+
             echo json_encode([
                 'success' => $success,
                 'message' => $success ? 'Trajet créé avec succès' : 'Erreur lors de la création'
@@ -94,100 +146,133 @@ class TrajetController extends Controller
 
         } catch (Throwable $e) {
             http_response_code(500);
-            echo json_encode(['success'=>false,'message'=>'Erreur serveur : '.$e->getMessage()]); exit;
+            echo json_encode([
+                'success' => false,
+                'message' => 'Erreur serveur : ' . $e->getMessage()
+            ]);
+            exit;
         }
     }
 
-    // =========================
-    // Edition du trajet (GET + POST)
-    // =========================
-   public function edit(int $id): void
-{
-    if (!isset($_SESSION['user']['id'])) {
-        header('Location: ' . BASE_URL . '/login');
-        exit;
-    }
+    /* =====================================================
+     * ÉDITION DE TRAJET (GET + POST)
+     * ===================================================== */
 
-    $userId = $_SESSION['user']['id'];
-    $trajet = $this->trajetModel->getById($id);
+    /**
+     * Modification d’un trajet
+     * - GET : affiche le formulaire
+     * - POST : met à jour le trajet (AJAX)
+     */
+    public function edit(int $id): void
+    {
+        // Vérification connexion
+        if (!isset($_SESSION['user']['id'])) {
+            header('Location: ' . BASE_URL . '/login');
+            exit;
+        }
 
-    if (!$trajet || $trajet['conducteur_id'] != $userId) {
-        echo "Trajet introuvable ou accès refusé";
-        exit;
-    }
+        $userId = $_SESSION['user']['id'];
+        $trajet = $this->trajetModel->getById($id);
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        // POST AJAX
-        header('Content-Type: application/json; charset=utf-8');
+        // Sécurité : seul le conducteur peut modifier
+        if (!$trajet || $trajet['conducteur_id'] != $userId) {
+            echo "Trajet introuvable ou accès refusé";
+            exit;
+        }
 
-        $required = ['depart','arrivee','date_depart','date_arrivee','nb_places_totales','nb_places_disponibles'];
-        foreach ($required as $field) {
-            if (!isset($_POST[$field]) || $_POST[$field] === '') {
-                echo json_encode(['success'=>false,'message'=>"Champ manquant : $field"]);
+        // -----------------
+        // POST (AJAX)
+        // -----------------
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+            header('Content-Type: application/json; charset=utf-8');
+
+            $required = [
+                'depart', 'arrivee', 'date_depart',
+                'date_arrivee', 'nb_places_totales', 'nb_places_disponibles'
+            ];
+
+            foreach ($required as $field) {
+                if (!isset($_POST[$field]) || $_POST[$field] === '') {
+                    echo json_encode(['success' => false, 'message' => "Champ manquant : $field"]);
+                    exit;
+                }
+            }
+
+            $data = [
+                'depart'               => (int) $_POST['depart'],
+                'arrivee'              => (int) $_POST['arrivee'],
+                'date_depart'          => $_POST['date_depart'],
+                'date_arrivee'         => $_POST['date_arrivee'],
+                'nb_places_totales'    => (int) $_POST['nb_places_totales'],
+                'nb_places_disponibles'=> (int) $_POST['nb_places_disponibles']
+            ];
+
+            // Validation métier
+            if ($data['depart'] === $data['arrivee']) {
+                echo json_encode(['success' => false, 'message' => 'Les agences doivent être différentes']);
+                exit;
+            }
+
+            if ($data['date_arrivee'] <= $data['date_depart']) {
+                echo json_encode(['success' => false, 'message' => 'La date d’arrivée doit être après le départ']);
+                exit;
+            }
+
+            try {
+                $success = $this->trajetModel->update($id, $data);
+                echo json_encode([
+                    'success' => $success,
+                    'message' => $success ? 'Trajet modifié avec succès' : 'Erreur lors de la modification'
+                ]);
+                exit;
+            } catch (Throwable $e) {
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => 'Erreur serveur']);
                 exit;
             }
         }
 
-        $data = [
-            'depart' => (int) $_POST['depart'],
-            'arrivee' => (int) $_POST['arrivee'],
-            'date_depart' => $_POST['date_depart'],
-            'date_arrivee' => $_POST['date_arrivee'],
-            'nb_places_totales' => (int) $_POST['nb_places_totales'],
-            'nb_places_disponibles' => (int) $_POST['nb_places_disponibles']
-        ];
-
-        if ($data['depart'] === $data['arrivee']) {
-            echo json_encode(['success'=>false,'message'=>'Les agences doivent être différentes']);
-            exit;
-        }
-        if ($data['date_arrivee'] <= $data['date_depart']) {
-            echo json_encode(['success'=>false,'message'=>'La date d’arrivée doit être après le départ']);
-            exit;
-        }
-
-        try {
-            $success = $this->trajetModel->update($id, $data);
-            echo json_encode([
-                'success' => $success,
-                'message' => $success ? 'Trajet modifié avec succès' : 'Erreur lors de la modification'
-            ]);
-            exit;
-        } catch (\Throwable $e) {
-            http_response_code(500);
-            echo json_encode(['success'=>false,'message'=>'Erreur serveur']);
-            exit;
-        }
+        // -----------------
+        // GET : affichage formulaire
+        // -----------------
+        $this->render('edit_trajet', [
+            'user'    => $_SESSION['user'],
+            'trajet'  => $trajet,
+            'agences' => $this->trajetModel->getAgences()
+        ]);
     }
 
-    // GET → afficher le formulaire
-    $this->render('edit_trajet', [
-        'user' => $_SESSION['user'],
-        'trajet' => $trajet,
-        'agences' => $this->trajetModel->getAgences()
-    ]);
-}
+    /* =====================================================
+     * SUPPRESSION DE TRAJET
+     * ===================================================== */
 
-
-    // =========================
-    // Suppression
-    // =========================
+    /**
+     * Supprime un trajet
+     * Accessible uniquement au conducteur
+     */
     public function delete(int $id): void
     {
         header('Content-Type: application/json; charset=utf-8');
 
         try {
             if (!isset($_SESSION['user']['id'])) {
-                echo json_encode(['success'=>false,'message'=>'Connexion requise']); exit;
+                echo json_encode(['success' => false, 'message' => 'Connexion requise']);
+                exit;
             }
 
             $trajet = $this->trajetModel->getById($id);
             if (!$trajet) {
-                echo json_encode(['success'=>false,'message'=>'Trajet introuvable']); exit;
+                echo json_encode(['success' => false, 'message' => 'Trajet introuvable']);
+                exit;
             }
 
             if ($trajet['conducteur_id'] != $_SESSION['user']['id']) {
-                echo json_encode(['success'=>false,'message'=>'Vous n’êtes pas autorisé à supprimer ce trajet']); exit;
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Vous n’êtes pas autorisé à supprimer ce trajet'
+                ]);
+                exit;
             }
 
             $success = $this->trajetModel->delete($id);
@@ -199,20 +284,26 @@ class TrajetController extends Controller
 
         } catch (Throwable $e) {
             http_response_code(500);
-            echo json_encode(['success'=>false,'message'=>'Erreur serveur']); exit;
+            echo json_encode(['success' => false, 'message' => 'Erreur serveur']);
+            exit;
         }
     }
 
-    // =========================
-    // Réservations
-    // =========================
+    /* =====================================================
+     * RÉSERVATIONS
+     * ===================================================== */
+
+    /**
+     * Formulaire de réservation d’un trajet
+     */
     public function reserveForm(int $id): void
     {
         if (!isset($_SESSION['user'])) {
-            header('Location: ' . BASE_URL . '/login'); exit;
+            header('Location: ' . BASE_URL . '/login');
+            exit;
         }
 
-        $trajet = $this->trajetModel->getByIdWithAgences($id);
+        $trajet  = $this->trajetModel->getByIdWithAgences($id);
         $message = null;
 
         if (!$trajet || $trajet['nb_places_disponibles'] <= 0) {
@@ -225,25 +316,30 @@ class TrajetController extends Controller
         }
 
         $this->render('reservation_form', [
-            'user' => $_SESSION['user'],
-            'trajet' => $trajet,
+            'user'    => $_SESSION['user'],
+            'trajet'  => $trajet,
             'message' => $message
         ]);
     }
 
+    /**
+     * Création d’une réservation (AJAX)
+     */
     public function reserve(int $id): void
     {
         header('Content-Type: application/json; charset=utf-8');
 
         if (!isset($_SESSION['user']['id'])) {
-            echo json_encode(['success'=>false,'message'=>'Connexion requise']); return;
+            echo json_encode(['success' => false, 'message' => 'Connexion requise']);
+            return;
         }
 
-        $userId = (int)$_SESSION['user']['id'];
-        $nbPlaces = (int)($_POST['nb_places'] ?? 0);
+        $userId   = (int) $_SESSION['user']['id'];
+        $nbPlaces = (int) ($_POST['nb_places'] ?? 0);
 
         if ($nbPlaces < 1) {
-            echo json_encode(['success'=>false,'message'=>'Nombre de places invalide']); return;
+            echo json_encode(['success' => false, 'message' => 'Nombre de places invalide']);
+            return;
         }
 
         try {
@@ -251,22 +347,32 @@ class TrajetController extends Controller
             $success = $reservationModel->create($id, $userId, $nbPlaces);
 
             if (!$success) {
-                echo json_encode(['success'=>false,'message'=>'Réservation impossible (déjà réservée ou places insuffisantes)']);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Réservation impossible (déjà réservée ou places insuffisantes)'
+                ]);
                 return;
             }
 
-            echo json_encode(['success'=>true,'message'=>"Réservation confirmée pour $nbPlaces place(s)"]);
+            echo json_encode([
+                'success' => true,
+                'message' => "Réservation confirmée pour $nbPlaces place(s)"
+            ]);
 
         } catch (Throwable $e) {
             http_response_code(500);
-            echo json_encode(['success'=>false,'message'=>'Erreur serveur']);
+            echo json_encode(['success' => false, 'message' => 'Erreur serveur']);
         }
     }
 
+    /**
+     * Liste des réservations de l'utilisateur connecté
+     */
     public function myReservations(): void
     {
         if (!isset($_SESSION['user']['id'])) {
-            header('Location: ' . BASE_URL . '/login'); exit;
+            header('Location: ' . BASE_URL . '/login');
+            exit;
         }
 
         $reservationModel = new Reservation();
@@ -275,33 +381,45 @@ class TrajetController extends Controller
         $this->render('my_reservations', ['reservations' => $reservations]);
     }
 
+    /**
+     * Annulation d’une réservation
+     */
     public function cancelReservation(int $id): void
     {
         if (!isset($_SESSION['user']['id'])) {
-            header('Location: ' . BASE_URL . '/login'); exit;
+            header('Location: ' . BASE_URL . '/login');
+            exit;
         }
 
         $reservationModel = new Reservation();
         $reservation = $reservationModel->getById($id);
 
         if (!$reservation || $reservation['utilisateur_id'] != $_SESSION['user']['id']) {
-            header('Location: ' . BASE_URL . '/reservation/mine'); exit;
+            header('Location: ' . BASE_URL . '/reservation/mine');
+            exit;
         }
 
         $reservationModel->delete($id);
-        header('Location: ' . BASE_URL . '/reservation/mine'); exit;
+        header('Location: ' . BASE_URL . '/reservation/mine');
+        exit;
     }
 
+    /**
+     * Modification du nombre de places réservées
+     */
     public function updateReservation(int $id): void
     {
         if (!isset($_SESSION['user']['id'])) {
-            header('Location: ' . BASE_URL . '/login'); exit;
+            header('Location: ' . BASE_URL . '/login');
+            exit;
         }
 
-        $newNb = (int)($_POST['nb_places'] ?? 0);
+        $newNb = (int) ($_POST['nb_places'] ?? 0);
+
         $reservationModel = new Reservation();
         $reservationModel->updatePlaces($id, $_SESSION['user']['id'], $newNb);
 
-        header('Location: ' . BASE_URL . '/reservation/mine'); exit;
+        header('Location: ' . BASE_URL . '/reservation/mine');
+        exit;
     }
 }

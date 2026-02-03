@@ -2,14 +2,17 @@
 
 <div class="container my-5">
 
+    <!-- Titre -->
     <h2 class="text-center mb-4 text-primary">Mes réservations</h2>
 
+    <!-- Si l'utilisateur n'a aucune réservation -->
     <?php if (empty($reservations)): ?>
         <div class="alert alert-info text-center" role="status">
             Vous n'avez réservé aucun trajet.
         </div>
     <?php else: ?>
 
+        <!-- Tableau des réservations -->
         <table class="table trajet-table text-center align-middle">
             <thead>
                 <tr class="table-primary">
@@ -24,14 +27,18 @@
                 </tr>
             </thead>
             <tbody>
-
-            <?php foreach ($reservations as $r): ?>
+<?php foreach ($reservations as $r): ?>
                 <?php
                     [$dateD, $heureD] = explode(' ', $r['date_depart']);
                     [$dateA, $heureA] = explode(' ', $r['date_arrivee']);
-                    $nbReservees = (int) $r['nb_places'];
-                    $nbTotal = (int) $r['nb_places_totales'];
-                    $nbDispo = (int) $r['nb_places_disponibles'];
+
+                    $nbReservees = (int) ($r['nb_places'] ?? 0);
+                    $nbTotal = (int) ($r['nb_places_totales'] ?? 0);
+                    $nbDispo = (int) ($r['nb_places_disponibles'] ?? 0);
+
+                    // Badge couleur selon disponibilité
+                    $badgeClass = $nbDispo > 0 ? 'bg-success text-white' : 'bg-danger text-white';
+                    $badgeText = $nbReservees; // Affiche le nombre réservé
                 ?>
                 <tr>
                     <td><?= htmlspecialchars($r['depart']) ?></td>
@@ -41,11 +48,11 @@
                     <td><?= date('d/m/Y', strtotime($dateA)) ?></td>
                     <td><?= substr($heureA, 0, 5) ?></td>
                     <td>
-                        <strong><?= $nbReservees ?></strong> / <?= $nbTotal ?>
+                        <span class="badge <?= $badgeClass ?>">
+                            <?= $badgeText ?>
+                        </span> / <?= $nbTotal ?>
                     </td>
                     <td class="d-flex gap-1 justify-content-center">
-
-                        <!-- Modifier réservation -->
                         <button class="btn btn-sm btn-warning"
                                 aria-label="Modifier réservation"
                                 data-bs-toggle="modal"
@@ -55,8 +62,6 @@
                                 data-max="<?= $nbReservees + $nbDispo ?>">
                             <i class="bi bi-pencil"></i>
                         </button>
-
-                        <!-- Annuler réservation -->
                         <button class="btn btn-sm btn-danger"
                                 aria-label="Annuler réservation"
                                 data-bs-toggle="modal"
@@ -64,15 +69,14 @@
                                 data-id="<?= $r['id'] ?>">
                             <i class="bi bi-x-circle"></i>
                         </button>
-
                     </td>
                 </tr>
             <?php endforeach; ?>
-
             </tbody>
         </table>
 
     <?php endif; ?>
+
 
 </div>
 
@@ -138,9 +142,15 @@
 
 <!-- ================= JAVASCRIPT ================= -->
 <script>
+/**
+ * Dynamique des modals : 
+ * - Annulation d'une réservation
+ * - Modification du nombre de places réservées
+ */
 document.getElementById('cancelModal').addEventListener('show.bs.modal', function (event) {
-    const button = event.relatedTarget;
+    const button = event.relatedTarget; // Bouton qui a déclenché le modal
     const reservationId = button.getAttribute('data-id');
+    // Mise à jour de l'action du formulaire selon la réservation
     document.getElementById('cancelForm').action =
         '<?= BASE_URL ?>/reservation/cancel/' + reservationId;
 });
@@ -152,9 +162,10 @@ document.getElementById('editModal').addEventListener('show.bs.modal', function 
     const maxPlaces = button.getAttribute('data-max');
 
     const input = document.getElementById('editNbPlaces');
-    input.value = places;
-    input.max = maxPlaces;
+    input.value = places;   // Remplir le champ avec le nombre actuel de places
+    input.max = maxPlaces;  // Définir le max selon la disponibilité
 
+    // Mise à jour de l'action du formulaire selon la réservation
     document.getElementById('editForm').action =
         '<?= BASE_URL ?>/reservation/update/' + reservationId;
 });

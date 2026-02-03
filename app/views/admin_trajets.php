@@ -1,12 +1,17 @@
-<?php require_once __DIR__ . '/templates/header.php'; ?>
+<?php 
+// Inclusion du header commun (navigation, CSS, SEO, etc.)
+require_once __DIR__ . '/templates/header.php'; 
+?>
 
 <div class="container my-5">
+    <!-- Titre de la page avec icône -->
     <h2 class="text-center mb-4 text-primary">
         <i class="bi bi-truck" aria-hidden="true"></i>
-        <span class="visually-hidden">Icône trajets</span>
+        <span class="visually-hidden">Icône trajets</span> <!-- Accessibilité -->
         Gestion des trajets
     </h2>
 
+    <!-- Conteneur pour la liste des trajets -->
     <div id="trajets-container" role="status" aria-live="polite">
         <div class="text-center text-muted">
             Chargement des trajets...
@@ -18,8 +23,15 @@
 const BASE_URL = "<?= BASE_URL ?>";
 
 /* ===============================
- * UTILITAIRES MESSAGES MODAL
+ * FONCTIONS UTILES POUR LES MESSAGES DANS LES MODALS
  * =============================== */
+
+/**
+ * Affiche un message dans une modal (success / danger / info)
+ * @param {string} id - ID de l'élément alert dans la modal
+ * @param {string} message - Texte du message
+ * @param {string} type - Type de message Bootstrap (success, danger, info)
+ */
 function showModalMessage(id, message, type = 'danger') {
     const el = document.getElementById(id);
     if (!el) return;
@@ -28,14 +40,22 @@ function showModalMessage(id, message, type = 'danger') {
     el.classList.remove('d-none');
 }
 
+/**
+ * Cache le message d'une modal
+ * @param {string} id - ID de l'élément alert dans la modal
+ */
 function clearModalMessage(id) {
     const el = document.getElementById(id);
     if (el) el.classList.add('d-none');
 }
 
 /* ===============================
- * Chargement des trajets (ADMIN)
+ * CHARGEMENT DES TRAJETS (ADMIN)
  * =============================== */
+
+/**
+ * Charge les trajets via API JSON et affiche dans un tableau
+ */
 async function loadTrajets() {
     const container = document.getElementById('trajets-container');
 
@@ -43,6 +63,7 @@ async function loadTrajets() {
         const response = await fetch(`${BASE_URL}/trajets/json`);
         const trajets = await response.json();
 
+        // Si aucun trajet, afficher message informatif
         if (!trajets.length) {
             container.innerHTML =
                 `<div class="alert alert-info text-center" role="alert">
@@ -51,9 +72,12 @@ async function loadTrajets() {
             return;
         }
 
+        // Construction du tableau HTML
         let html = `
         <table class="table trajet-table text-center align-middle">
-            <caption class="visually-hidden">Liste des trajets disponibles avec dates, horaires, places et actions</caption>
+            <caption class="visually-hidden">
+                Liste des trajets disponibles avec dates, horaires, places et actions
+            </caption>
             <thead>
                 <tr>
                     <th scope="col">Départ</th>
@@ -69,6 +93,7 @@ async function loadTrajets() {
             <tbody>`;
 
         trajets.forEach(t => {
+            // Séparation date et heure pour un affichage clair
             const [dD, hD] = t.date_depart.split(' ');
             const [dA, hA] = t.date_arrivee.split(' ');
 
@@ -82,6 +107,7 @@ async function loadTrajets() {
                 <td>${hA.slice(0,5)}</td>
                 <td><strong>${t.nb_places_disponibles}</strong> / ${t.nb_places_totales}</td>
                 <td class="d-flex gap-1 justify-content-center">
+                    <!-- Bouton pour voir infos conducteur -->
                     <button class="btn btn-sm btn-primary"
                         aria-label="Voir le conducteur du trajet ${t.depart} → ${t.arrivee}"
                         data-bs-toggle="modal"
@@ -89,6 +115,7 @@ async function loadTrajets() {
                         <i class="bi bi-eye" aria-hidden="true"></i>
                     </button>
 
+                    <!-- Bouton pour supprimer le trajet -->
                     <button class="btn btn-sm btn-danger"
                         aria-label="Supprimer le trajet ${t.depart} → ${t.arrivee}"
                         data-bs-toggle="modal"
@@ -125,6 +152,7 @@ async function loadTrajets() {
                         </div>
 
                         <div class="modal-body">
+                            <!-- Conteneur pour afficher message success / erreur -->
                             <div id="delete-trajet-message-${t.id}" class="alert d-none" role="alert"></div>
                             Voulez-vous vraiment supprimer ce trajet ?
                         </div>
@@ -146,6 +174,7 @@ async function loadTrajets() {
         container.innerHTML = html;
 
     } catch (e) {
+        // Affichage message d'erreur en cas de problème serveur
         console.error(e);
         container.innerHTML =
             `<div class="alert alert-danger text-center" role="alert">
@@ -155,8 +184,13 @@ async function loadTrajets() {
 }
 
 /* ===============================
- * Suppression trajet (ADMIN)
+ * SUPPRESSION D'UN TRAJET (ADMIN)
  * =============================== */
+
+/**
+ * Supprime un trajet et met à jour la liste
+ * @param {number} id - ID du trajet
+ */
 async function deleteTrajet(id) {
     const messageId = `delete-trajet-message-${id}`;
     clearModalMessage(messageId);
@@ -173,8 +207,10 @@ async function deleteTrajet(id) {
             return;
         }
 
+        // Affichage message succès
         showModalMessage(messageId, result.message, 'success');
 
+        // Masquer modal et recharger la liste après 0.8s
         setTimeout(() => {
             bootstrap.Modal.getInstance(
                 document.getElementById(`deleteTrajetModal${id}`)
@@ -189,7 +225,7 @@ async function deleteTrajet(id) {
 }
 
 /* ===============================
- * Initialisation
+ * INITIALISATION AU CHARGEMENT DE LA PAGE
  * =============================== */
 loadTrajets();
 </script>

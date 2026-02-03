@@ -1,43 +1,50 @@
 /* ==========================================================
    VARIABLES
+   ----------------------------------------------------------
+   Définition des couleurs, ombres, radius et transition
+   pour une utilisation cohérente dans tout le projet.
 ========================================================== */
-$bg-light: #f1f8fc;
-$primary: #0074c7;
-$primary-dark: #00497c;
-$text-color: #384050;
-$danger: #cd2c2e;
-$success: #82b864;
-$white: #ffffff;
-$shadow-soft: 0 4px 10px rgba(0, 0, 0, 0.05);
-$shadow-hover: 0 12px 25px rgba(0, 0, 0, 0.12);
-$radius: 14px;
-$transition: 0.25s ease;
+$bg-light: #f1f8fc;           // Couleur de fond générale
+$primary: #0074c7;             // Couleur principale
+$primary-dark: #00497c;        // Variante plus sombre de la couleur principale
+$text-color: #384050;          // Couleur du texte par défaut
+$danger: #cd2c2e;              // Couleur pour les alertes / erreurs
+$success: #82b864;             // Couleur pour succès / validation
+$white: #ffffff;               // Blanc pur
+$shadow-soft: 0 4px 10px rgba(0, 0, 0, 0.05);   // Ombre légère
+$shadow-hover: 0 12px 25px rgba(0, 0, 0, 0.12); // Ombre au survol
+$radius: 14px;                 // Arrondi des coins pour cartes, boutons
+$transition: 0.25s ease;       // Durée / timing des transitions CSS
 
 
 /* ==========================================================
    GLOBAL
+   ----------------------------------------------------------
+   Styles globaux du body, titres et couleurs principales
 ========================================================== */
 body {
-  background-color: $bg-light;
-  color: $text-color;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: $bg-light;  // Fond clair
+  color: $text-color;           // Couleur texte
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; // Police lisible
 }
 
 h2, h3, h4 {
-  font-weight: 600;
+  font-weight: 600;             // Titres légèrement gras
 }
 
 .text-primary-dark {
-  color: $primary-dark;
+  color: $primary-dark;         // Classe utilitaire pour texte sombre
 }
 
 
 /* ==========================================================
    NAVBAR
+   ----------------------------------------------------------
+   Styles pour la barre de navigation, boutons et liens
 ========================================================== */
 .navbar {
-  background-color: $primary-dark !important;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  background-color: $primary-dark !important;   // Fond sombre
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);  // Ombre subtile
 
   .navbar-brand {
     color: $bg-light !important;
@@ -47,7 +54,7 @@ h2, h3, h4 {
 
   .nav-link,
   .btn {
-    color: $bg-light !important;
+    color: $bg-light !important;  // Liens et boutons clairs
   }
 
   .btn-primary {
@@ -55,7 +62,7 @@ h2, h3, h4 {
     border-color: $primary;
 
     &:hover {
-      background-color: darken($primary, 10%);
+      background-color: darken($primary, 10%);  // Assombrir au survol
       border-color: darken($primary, 10%);
     }
   }
@@ -74,11 +81,13 @@ h2, h3, h4 {
 
 /* ==========================================================
    ALERTS
+   ----------------------------------------------------------
+   Couleurs spécifiques pour messages de succès / erreur
 ========================================================== */
 .alert-success {
   background-color: $success;
   color: $white;
-  border: none;
+  border: none; // Supprime bordures par défaut
 }
 
 .alert-danger {
@@ -90,11 +99,13 @@ h2, h3, h4 {
 
 /* ==========================================================
    TABLE TRAJETS = CARDS ANIMÉES
+   ----------------------------------------------------------
+   Tableau stylisé comme des cartes avec animations et hover
 ========================================================== */
 .trajet-table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0 1rem;
+  border-collapse: separate;   // Séparer les cellules pour spacing
+  border-spacing: 0 1rem;      // Espacement vertical entre lignes
 
   thead {
     th {
@@ -103,24 +114,20 @@ h2, h3, h4 {
       font-weight: bold;
       padding: 0.75rem 1rem;
 
-      &:first-child {
-        border-top-left-radius: $radius;
-      }
-      &:last-child {
-        border-top-right-radius: $radius;
-      }
+      &:first-child { border-top-left-radius: $radius; }
+      &:last-child  { border-top-right-radius: $radius; }
     }
   }
 
   tbody {
     tr {
-      animation: fadeSlideIn 0.45s ease forwards;
+      animation: fadeSlideIn 0.45s ease forwards; // Animation d'apparition
 
       td {
         background-color: $white;
         padding: 0.75rem 1rem;
         vertical-align: middle;
-        transition: transform $transition, box-shadow $transition;
+        transition: transform $transition, box-shadow $transition; // Animation hover
       }
 
       td:first-child {
@@ -134,8 +141,8 @@ h2, h3, h4 {
       }
 
       &:hover td {
-        transform: translateY(-4px);
-        box-shadow: $shadow-hover;
+        transform: translateY(-4px); // Légère élévation
+        box-shadow: $shadow-hover;  // Ombre plus prononcée
       }
     }
   }
@@ -143,7 +150,7 @@ h2, h3, h4 {
 
 .places-dispo {
   font-weight: 700;
-  color: $success;
+  color: $success;  // Met en avant les places disponibles
 }
 
 
@@ -152,7 +159,7 @@ h2, h3, h4 {
 ========================================================== */
 .modal-content {
   border-radius: $radius;
-  box-shadow: $shadow-hover;
+  box-shadow: $shadow-hover;  // Ombre sur la modale
 }
 
 .modal-header {
@@ -170,7 +177,7 @@ h2, h3, h4 {
 
   &:focus {
     border-color: $primary;
-    box-shadow: 0 0 0 0.2rem rgba(0, 116, 199, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(0, 116, 199, 0.25); // Glow au focus
   }
 }
 
@@ -197,13 +204,15 @@ button {
 
 /* ==========================================================
    RESPONSIVE
+   ----------------------------------------------------------
+   Adaptation des tables pour petits écrans
 ========================================================== */
 @media (max-width: 768px) {
   .trajet-table {
     font-size: 0.85rem;
 
     thead {
-      display: none;
+      display: none; // Masquer header sur mobile
     }
 
     tbody tr {
@@ -215,7 +224,7 @@ button {
         padding: 0.5rem 0.75rem;
 
         &::before {
-          content: attr(data-label);
+          content: attr(data-label); // Affiche le label avant chaque valeur
           font-weight: bold;
           color: $primary-dark;
         }
