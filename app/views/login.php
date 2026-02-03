@@ -1,15 +1,29 @@
 <?php
-// On suppose que session_start() a déjà été appelé
+// session_start() déjà appelé dans index.php
+
 $flash = $_SESSION['flash'] ?? null;
 unset($_SESSION['flash']);
 
 // Vérifier si l'utilisateur est connecté
 $isLoggedIn = !empty($_SESSION['user']);
+
+if ($isLoggedIn) {
+
+    // Cas ADMIN
+    if (
+        isset($_SESSION['user']['role']) &&
+        $_SESSION['user']['role'] === 'admin'
+    ) {
+        header('Location: ' . BASE_URL . '/admin/dashboard');
+        exit;
+    }
+
+    // Cas UTILISATEUR NORMAL
+    header('Location: ' . BASE_URL . '/');
+    exit;
+}
 ?>
 
-<?php if ($isLoggedIn): ?>
-    <?php header('Location: ' . BASE_URL . '/'); exit; ?>
-<?php endif; ?>
 
 <div class="container mt-5">
     <div class="row justify-content-center">

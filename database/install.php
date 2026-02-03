@@ -58,7 +58,8 @@ try {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ");
 
-    // UTILISATEURS (avec password)
+   
+    // UTILISATEURS (avec password et role)
     $pdo->exec("
         CREATE TABLE utilisateurs (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -66,7 +67,8 @@ try {
             nom VARCHAR(50) NOT NULL,
             email VARCHAR(100) NOT NULL UNIQUE,
             telephone VARCHAR(20) NOT NULL,
-            password VARCHAR(255) NOT NULL
+            password VARCHAR(255) NOT NULL,
+            role ENUM('user','admin') NOT NULL DEFAULT 'user'
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ");
 
@@ -156,24 +158,28 @@ try {
     echo "✔ Agences insérées<br>";
 
     // UTILISATEURS (mot de passe hashé)
+   
+    // UTILISATEURS (mot de passe hashé)
     $users = [
-        ['Martin','Alexandre','0612345678','alexandre.martin@email.fr'],
-        ['Dubois','Sophie','0698765432','sophie.dubois@email.fr'],
-        ['Bernard','Julien','0622446688','julien.bernard@email.fr'],
-        ['Moreau','Camille','0611223344','camille.moreau@email.fr'],
-        ['Lefèvre','Lucie','0777889900','lucie.lefevre@email.fr'],
-        ['Leroy','Thomas','0655443322','thomas.leroy@email.fr'],
-        ['Roux','Chloé','0633221199','chloe.roux@email.fr'],
-        ['Petit','Maxime','0766778899','maxime.petit@email.fr'],
-        ['Garnier','Laura','0688776655','laura.garnier@email.fr'],
-        ['Dupuis','Antoine','0744556677','antoine.dupuis@email.fr']
+        ['Martin','Alexandre','0612345678','alexandre.martin@email.fr','user'],
+        ['Dubois','Sophie','0698765432','sophie.dubois@email.fr','user'],
+        ['Bernard','Julien','0622446688','julien.bernard@email.fr','user'],
+        ['Moreau','Camille','0611223344','camille.moreau@email.fr','user'],
+        ['Lefèvre','Lucie','0777889900','lucie.lefevre@email.fr','user'],
+        ['Leroy','Thomas','0655443322','thomas.leroy@email.fr','user'],
+        ['Roux','Chloé','0633221199','chloe.roux@email.fr','user'],
+        ['Petit','Maxime','0766778899','maxime.petit@email.fr','user'],
+        ['Garnier','Laura','0688776655','laura.garnier@email.fr','user'],
+        ['Dupuis','Antoine','0744556677','antoine.dupuis@email.fr','user'],
+        // ADMIN
+        ['Admin','Super','0600000000','admin@entreprise.com','admin']
     ];
 
     $passwordHash = password_hash('password123', PASSWORD_DEFAULT);
 
     $stmt = $pdo->prepare("
-        INSERT INTO utilisateurs (nom, prenom, telephone, email, password)
-        VALUES (:nom, :prenom, :telephone, :email, :password)
+        INSERT INTO utilisateurs (nom, prenom, telephone, email, password, role)
+        VALUES (:nom, :prenom, :telephone, :email, :password, :role)
     ");
 
     foreach ($users as $u) {
@@ -182,11 +188,12 @@ try {
             'prenom'    => $u[1],
             'telephone' => $u[2],
             'email'     => $u[3],
-            'password'  => $passwordHash
+            'password'  => $passwordHash,
+            'role'      => $u[4]
         ]);
     }
-    echo "✔ Utilisateurs insérés (password = password123)<br>";
 
+    echo "✔ Utilisateurs insérés (password = password123, un admin inclus)<br>";
     // -------------------------------------------------
     // 5. Trajets de test
     // -------------------------------------------------

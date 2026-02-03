@@ -113,20 +113,10 @@ document.addEventListener('DOMContentLoaded', function() {
             modal.show();
 
             if (result.success) {
-                // Mettre à jour le nombre de places affichées
-                const currentPlaces = parseInt(badgePlaces.innerText);
-                const reserved = parseInt(inputNbPlaces.value);
-                const newPlaces = currentPlaces - reserved;
-                badgePlaces.innerText = newPlaces;
-
-                // Ajuster le max de l'input
-                inputNbPlaces.max = newPlaces;
-
-                // Désactiver si plus de places
-                if (newPlaces <= 0) {
-                    inputNbPlaces.disabled = true;
-                    reservationForm.querySelector('button[type="submit"]').disabled = true;
-                }
+                 // Redirection vers l'accueil après succès
+    setTimeout(() => {
+        window.location.href = `${BASE_URL}/`;
+    }, 1500);
             }
 
         } catch (error) {

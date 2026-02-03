@@ -212,5 +212,11 @@ public function updateAvailablePlaces(int $id, int $newPlaces): bool
         ':id' => $id
     ]);
 }
+public function countActifs(): int
+{
+    $sql = "SELECT COUNT(*) FROM trajets WHERE date_depart > NOW()";
+    return (int)$this->db->query($sql)->fetchColumn();
+}
+
 
 }
