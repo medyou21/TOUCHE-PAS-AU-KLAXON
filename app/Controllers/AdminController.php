@@ -198,12 +198,41 @@ public function statsJson(): void
 {
     header('Content-Type: application/json; charset=utf-8');
 
+    // ------------------------------
+    // Statistiques principales
+    // ------------------------------
+    $usersCount = count($this->userModel->getAll());
+    $agencesCount = count($this->agenceModel->getAll());
+    $trajetsCount = count($this->trajetModel->getAvailableTrajets());
+    $trajetsActifsCount = $this->trajetModel->countActifs();
+
+    // ------------------------------
+    // Trajets par jour (ex : derniers 7 jours)
+    // ------------------------------
+    $trajetsParJourRaw = $this->trajetModel->getTrajetsLastDays(7); // retourne [['date' => '2026-02-01', 'count'=>5], ...]
+    $trajetsParJour = [
+        'labels' => array_map(fn($t) => date('d/m', strtotime($t['date'])), $trajetsParJourRaw),
+        'data'   => array_map(fn($t) => $t['count'], $trajetsParJourRaw)
+    ];
+
+    // ------------------------------
+    // Utilisateurs par rôle
+    // ------------------------------
+    $usersByRoleRaw = $this->userModel->countByRole(); // retourne [['role'=>'admin','count'=>2],['role'=>'conducteur','count'=>15], ...]
+    $usersByRole = [
+        'labels' => array_map(fn($r) => ucfirst($r['role']), $usersByRoleRaw),
+        'data'   => array_map(fn($r) => $r['count'], $usersByRoleRaw)
+    ];
+
     echo json_encode([
-        'users'            => count($this->userModel->getAll()),
-        'agences'          => count($this->agenceModel->getAll()),
-        'trajets'          => count($this->trajetModel->getAvailableTrajets()),
-        'trajets_actifs'   => $this->trajetModel->countActifs()
+        'users'           => $usersCount,
+        'agences'         => $agencesCount,
+        'trajets'         => $trajetsCount,
+        'trajets_actifs'  => $trajetsActifsCount,
+        'trajets_jour'    => $trajetsParJour,
+        'users_role'      => $usersByRole
     ]);
 }
+
 
 }

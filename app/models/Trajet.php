@@ -218,5 +218,28 @@ public function countActifs(): int
     return (int)$this->db->query($sql)->fetchColumn();
 }
 
+/**
+ * Récupère le nombre de trajets pour les derniers X jours (par défaut 30 jours)
+ * @param int $days
+ * @return array ['labels'=>[], 'data'=>[]]
+ */
+public function getTrajetsLastDays(int $days = 7): array
+{
+    $sql = "
+        SELECT DATE(date_depart) AS date, COUNT(*) AS count
+        FROM trajets
+        WHERE date_depart >= CURDATE() - INTERVAL :days DAY
+        GROUP BY DATE(date_depart)
+        ORDER BY date ASC
+    ";
+
+    $stmt = $this->db->prepare($sql);
+    $stmt->execute([':days' => $days]);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Retourne le tableau brut
+    return $rows ?: [];
+}
+
 
 }

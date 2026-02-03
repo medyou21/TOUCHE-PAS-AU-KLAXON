@@ -24,7 +24,6 @@ if ($isLoggedIn) {
 }
 ?>
 
-
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-4">
@@ -38,7 +37,7 @@ if ($isLoggedIn) {
                 </div>
             <?php endif; ?>
 
-            <form action="<?= BASE_URL ?>/login" method="post">
+            <form action="<?= BASE_URL ?>/login" method="post" aria-label="Formulaire de connexion">
                 <div class="mb-3">
                     <label for="email" class="form-label">Adresse email</label>
                     <input type="email"
@@ -46,7 +45,8 @@ if ($isLoggedIn) {
                            id="email"
                            name="email"
                            placeholder="email@entreprise.com"
-                           required>
+                           required
+                           aria-required="true">
                 </div>
 
                 <div class="mb-3">
@@ -56,7 +56,8 @@ if ($isLoggedIn) {
                            id="password"
                            name="password"
                            placeholder="Mot de passe"
-                           required>
+                           required
+                           aria-required="true">
                 </div>
 
                 <button type="submit" class="btn btn-primary w-100 mb-3">

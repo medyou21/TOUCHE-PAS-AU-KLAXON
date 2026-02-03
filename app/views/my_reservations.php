@@ -5,7 +5,7 @@
     <h2 class="text-center mb-4 text-primary">Mes réservations</h2>
 
     <?php if (empty($reservations)): ?>
-        <div class="alert alert-info text-center">
+        <div class="alert alert-info text-center" role="status">
             Vous n'avez réservé aucun trajet.
         </div>
     <?php else: ?>
@@ -13,14 +13,14 @@
         <table class="table trajet-table text-center align-middle">
             <thead>
                 <tr class="table-primary">
-                    <th>Agence départ</th>
-                    <th>Date départ</th>
-                    <th>Heure</th>
-                    <th>Agence arrivée</th>
-                    <th>Date arrivée</th>
-                    <th>Heure</th>
-                    <th>Places réservées</th>
-                    <th>Actions</th>
+                    <th scope="col">Agence départ</th>
+                    <th scope="col">Date départ</th>
+                    <th scope="col">Heure</th>
+                    <th scope="col">Agence arrivée</th>
+                    <th scope="col">Date arrivée</th>
+                    <th scope="col">Heure</th>
+                    <th scope="col">Places réservées</th>
+                    <th scope="col">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -29,7 +29,6 @@
                 <?php
                     [$dateD, $heureD] = explode(' ', $r['date_depart']);
                     [$dateA, $heureA] = explode(' ', $r['date_arrivee']);
-
                     $nbReservees = (int) $r['nb_places'];
                     $nbTotal = (int) $r['nb_places_totales'];
                     $nbDispo = (int) $r['nb_places_disponibles'];
@@ -48,6 +47,7 @@
 
                         <!-- Modifier réservation -->
                         <button class="btn btn-sm btn-warning"
+                                aria-label="Modifier réservation"
                                 data-bs-toggle="modal"
                                 data-bs-target="#editModal"
                                 data-id="<?= $r['id'] ?>"
@@ -58,6 +58,7 @@
 
                         <!-- Annuler réservation -->
                         <button class="btn btn-sm btn-danger"
+                                aria-label="Annuler réservation"
                                 data-bs-toggle="modal"
                                 data-bs-target="#cancelModal"
                                 data-id="<?= $r['id'] ?>">
@@ -76,20 +77,24 @@
 </div>
 
 <!-- ================= MODAL ANNULATION ================= -->
-<div class="modal fade" id="cancelModal" tabindex="-1">
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <form method="POST" id="cancelForm">
         <div class="modal-header bg-danger text-white">
-          <h5 class="modal-title">Annuler la réservation</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          <h5 class="modal-title" id="cancelModalLabel">Annuler la réservation</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
         </div>
-        <div class="modal-body text-center">
+        <div class="modal-body text-center" role="alert">
           Voulez-vous vraiment annuler cette réservation ?
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Retour</button>
-          <button type="submit" class="btn btn-danger">Confirmer</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Retour
+          </button>
+          <button type="submit" class="btn btn-danger">
+            Confirmer
+          </button>
         </div>
       </form>
     </div>
@@ -97,23 +102,25 @@
 </div>
 
 <!-- ================= MODAL MODIFICATION ================= -->
-<div class="modal fade" id="editModal" tabindex="-1">
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <form method="POST" id="editForm">
         <div class="modal-header bg-warning">
-          <h5 class="modal-title">Modifier la réservation</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          <h5 class="modal-title" id="editModalLabel">Modifier la réservation</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
         </div>
 
         <div class="modal-body">
-          <label class="form-label">Nombre de places</label>
+          <label class="form-label" for="editNbPlaces">Nombre de places</label>
           <input type="number"
                  name="nb_places"
                  id="editNbPlaces"
                  class="form-control"
                  min="1"
-                 required>
+                 required
+                 aria-describedby="maxPlacesInfo">
+          <div id="maxPlacesInfo" class="form-text">Maximum possible selon la disponibilité</div>
         </div>
 
         <div class="modal-footer">
@@ -131,16 +138,13 @@
 
 <!-- ================= JAVASCRIPT ================= -->
 <script>
-// Modal annulation
 document.getElementById('cancelModal').addEventListener('show.bs.modal', function (event) {
     const button = event.relatedTarget;
     const reservationId = button.getAttribute('data-id');
-
     document.getElementById('cancelForm').action =
         '<?= BASE_URL ?>/reservation/cancel/' + reservationId;
 });
 
-// Modal modification
 document.getElementById('editModal').addEventListener('show.bs.modal', function (event) {
     const button = event.relatedTarget;
     const reservationId = button.getAttribute('data-id');
