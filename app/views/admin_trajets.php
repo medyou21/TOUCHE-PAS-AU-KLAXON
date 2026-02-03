@@ -1,11 +1,13 @@
 <?php require_once __DIR__ . '/templates/header.php'; ?>
 
 <div class="container my-5">
-    <h2 class="text-center mb-4">
-        <i class="bi bi-truck"></i> Gestion des trajets
+    <h2 class="text-center mb-4 text-primary">
+        <i class="bi bi-truck" aria-hidden="true"></i>
+        <span class="visually-hidden">Icône trajets</span>
+        Gestion des trajets
     </h2>
 
-    <div id="trajets-container">
+    <div id="trajets-container" role="status" aria-live="polite">
         <div class="text-center text-muted">
             Chargement des trajets...
         </div>
@@ -21,7 +23,6 @@ const BASE_URL = "<?= BASE_URL ?>";
 function showModalMessage(id, message, type = 'danger') {
     const el = document.getElementById(id);
     if (!el) return;
-
     el.className = `alert alert-${type}`;
     el.innerText = message;
     el.classList.remove('d-none');
@@ -44,7 +45,7 @@ async function loadTrajets() {
 
         if (!trajets.length) {
             container.innerHTML =
-                `<div class="alert alert-info text-center">
+                `<div class="alert alert-info text-center" role="alert">
                     Aucun trajet disponible.
                  </div>`;
             return;
@@ -52,16 +53,17 @@ async function loadTrajets() {
 
         let html = `
         <table class="table trajet-table text-center align-middle">
+            <caption class="visually-hidden">Liste des trajets disponibles avec dates, horaires, places et actions</caption>
             <thead>
                 <tr>
-                    <th>Départ</th>
-                    <th>Date départ</th>
-                    <th>Heure</th>
-                    <th>Arrivée</th>
-                    <th>Date arrivée</th>
-                    <th>Heure</th>
-                    <th>Places</th>
-                    <th>Actions</th>
+                    <th scope="col">Départ</th>
+                    <th scope="col">Date départ</th>
+                    <th scope="col">Heure</th>
+                    <th scope="col">Arrivée</th>
+                    <th scope="col">Date arrivée</th>
+                    <th scope="col">Heure</th>
+                    <th scope="col">Places</th>
+                    <th scope="col">Actions</th>
                 </tr>
             </thead>
             <tbody>`;
@@ -81,26 +83,28 @@ async function loadTrajets() {
                 <td><strong>${t.nb_places_disponibles}</strong> / ${t.nb_places_totales}</td>
                 <td class="d-flex gap-1 justify-content-center">
                     <button class="btn btn-sm btn-primary"
+                        aria-label="Voir le conducteur du trajet ${t.depart} → ${t.arrivee}"
                         data-bs-toggle="modal"
                         data-bs-target="#trajetModal${t.id}">
-                        <i class="bi bi-eye"></i>
+                        <i class="bi bi-eye" aria-hidden="true"></i>
                     </button>
 
                     <button class="btn btn-sm btn-danger"
+                        aria-label="Supprimer le trajet ${t.depart} → ${t.arrivee}"
                         data-bs-toggle="modal"
                         data-bs-target="#deleteTrajetModal${t.id}">
-                        <i class="bi bi-trash"></i>
+                        <i class="bi bi-trash" aria-hidden="true"></i>
                     </button>
                 </td>
             </tr>
 
             <!-- Modal infos conducteur -->
-            <div class="modal fade" id="trajetModal${t.id}" tabindex="-1">
+            <div class="modal fade" id="trajetModal${t.id}" tabindex="-1" aria-labelledby="trajetModalLabel${t.id}" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
                         <div class="modal-header bg-primary text-white">
-                            <h5 class="modal-title">Conducteur</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            <h5 class="modal-title" id="trajetModalLabel${t.id}">Conducteur</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
                         </div>
                         <div class="modal-body text-start">
                             <p><strong>Nom :</strong> ${t.prenom} ${t.nom}</p>
@@ -112,31 +116,24 @@ async function loadTrajets() {
             </div>
 
             <!-- Modal suppression trajet -->
-            <div class="modal fade" id="deleteTrajetModal${t.id}" tabindex="-1">
+            <div class="modal fade" id="deleteTrajetModal${t.id}" tabindex="-1" aria-labelledby="deleteTrajetModalLabel${t.id}" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
                         <div class="modal-header bg-danger text-white">
-                            <h5 class="modal-title">Confirmation</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            <h5 class="modal-title" id="deleteTrajetModalLabel${t.id}">Confirmation</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
                         </div>
 
                         <div class="modal-body">
-                            <div id="delete-trajet-message-${t.id}"
-                                 class="alert d-none"
-                                 role="alert"></div>
-
+                            <div id="delete-trajet-message-${t.id}" class="alert d-none" role="alert"></div>
                             Voulez-vous vraiment supprimer ce trajet ?
                         </div>
 
                         <div class="modal-footer">
-                            <button type="button"
-                                    class="btn btn-secondary"
-                                    data-bs-dismiss="modal">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                                 Annuler
                             </button>
-                            <button type="button"
-                                    class="btn btn-danger"
-                                    onclick="deleteTrajet(${t.id})">
+                            <button type="button" class="btn btn-danger" onclick="deleteTrajet(${t.id})">
                                 Supprimer
                             </button>
                         </div>
@@ -151,7 +148,7 @@ async function loadTrajets() {
     } catch (e) {
         console.error(e);
         container.innerHTML =
-            `<div class="alert alert-danger text-center">
+            `<div class="alert alert-danger text-center" role="alert">
                 Erreur de chargement des trajets.
              </div>`;
     }
@@ -186,11 +183,7 @@ async function deleteTrajet(id) {
         }, 800);
 
     } catch (e) {
-        showModalMessage(
-            messageId,
-            'Erreur serveur. Veuillez réessayer.',
-            'danger'
-        );
+        showModalMessage(messageId, 'Erreur serveur. Veuillez réessayer.', 'danger');
         console.error(e);
     }
 }

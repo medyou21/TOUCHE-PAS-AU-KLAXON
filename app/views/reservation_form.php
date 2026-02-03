@@ -24,29 +24,32 @@
             <p><strong>Date arrivée :</strong> <span id="trajetDateArrivee"><?= date('d/m/Y H:i', strtotime($trajet['date_arrivee'])) ?></span></p>
             <p>
                 <strong>Places disponibles :</strong>
-                <span class="badge bg-success" id="trajetPlaces"><?= $trajet['nb_places_disponibles'] ?></span>
+                <span class="badge bg-success" id="trajetPlaces" role="status"><?= $trajet['nb_places_disponibles'] ?></span>
             </p>
 
             <hr>
 
-            <form id="reservationForm">
+            <form id="reservationForm" aria-describedby="reservationInfo">
                 <div class="mb-3">
-                    <label class="form-label">Nombre de places à réserver</label>
+                    <label for="nb_places" class="form-label">Nombre de places à réserver</label>
                     <input
                         type="number"
+                        id="nb_places"
                         name="nb_places"
                         class="form-control"
                         min="1"
                         max="<?= $trajet['nb_places_disponibles'] ?>"
                         required
+                        aria-describedby="maxPlacesInfo"
                     >
+                    <div id="maxPlacesInfo" class="form-text">Maximum <?= $trajet['nb_places_disponibles'] ?> places disponibles</div>
                 </div>
 
                 <div class="d-flex justify-content-between">
-                    <a href="<?= BASE_URL ?>/" class="btn btn-secondary">
+                    <a href="<?= BASE_URL ?>/" class="btn btn-secondary" aria-label="Annuler la réservation">
                         Annuler
                     </a>
-                    <button type="submit" class="btn btn-success">
+                    <button type="submit" class="btn btn-success" aria-label="Réserver le trajet">
                         <i class="bi bi-calendar-check"></i> Réserver
                     </button>
                 </div>
@@ -58,16 +61,16 @@
 </div>
 
 <!-- Modal message -->
-<div class="modal fade" id="messageModal" tabindex="-1">
+<div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title">Réservation</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <h5 class="modal-title" id="messageModalLabel">Réservation</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
       </div>
-      <div class="modal-body" id="messageModalBody"></div>
+      <div class="modal-body" id="messageModalBody" role="alert"></div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal" aria-label="Fermer le message">Fermer</button>
       </div>
     </div>
   </div>
@@ -113,10 +116,10 @@ document.addEventListener('DOMContentLoaded', function() {
             modal.show();
 
             if (result.success) {
-                 // Redirection vers l'accueil après succès
-    setTimeout(() => {
-        window.location.href = `${BASE_URL}/`;
-    }, 1500);
+                // Redirection vers l'accueil après succès
+                setTimeout(() => {
+                    window.location.href = `${BASE_URL}/`;
+                }, 1500);
             }
 
         } catch (error) {

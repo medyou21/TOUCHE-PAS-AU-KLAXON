@@ -96,4 +96,26 @@ class Utilisateur
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    /**
+ * Compte le nombre d'utilisateurs par rôle
+ * @return array ['labels' => [], 'data' => []]
+ */
+public function countByRole(): array
+{
+    $sql = "
+        SELECT role, COUNT(*) AS count
+        FROM utilisateurs
+        GROUP BY role
+        ORDER BY role ASC
+    ";
+
+    $stmt = $this->db->query($sql);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Retourne le tableau brut
+    return $rows ?: [];
+}
+
+
 }

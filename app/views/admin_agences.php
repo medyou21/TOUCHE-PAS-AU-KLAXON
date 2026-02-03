@@ -1,6 +1,6 @@
 <?php require_once __DIR__ . '/templates/header.php'; ?>
 
-<div class="container my-5">
+<div class="container my-5 text-primary">
     <h2 class="text-center mb-4">
         <i class="bi bi-building"></i> Gestion des agences
     </h2>
