@@ -23,7 +23,7 @@ class Router
      *   'POST' => ['/url' => 'Controller@method']
      * ]
      *
-     * @var array
+     * @var array<string, array<string, string>> Méthode HTTP → (URL → Action)
      */
     private array $routes = [];
 
@@ -57,58 +57,32 @@ class Router
      */
     public function run(): void
     {
-        // Dossier du script (utile si projet dans un sous-dossier)
         $scriptDir = dirname($_SERVER['SCRIPT_NAME']);
-
-        // URI complète demandée
         $requestUri = $_SERVER['REQUEST_URI'];
-
-        // Nettoyage de l'URI (suppression du dossier racine)
         $uri = str_replace($scriptDir, '', $requestUri);
         $uri = parse_url($uri, PHP_URL_PATH);
         $uri = '/' . trim($uri, '/');
-
-        // Méthode HTTP utilisée (GET ou POST)
         $method = $_SERVER['REQUEST_METHOD'];
 
-        // Aucune route définie pour cette méthode
         if (!isset($this->routes[$method])) {
             $this->notFound();
             return;
         }
 
-        // Parcours des routes correspondant à la méthode HTTP
         foreach ($this->routes[$method] as $route => $action) {
-
-            // Normalisation de la route
             $route = '/' . trim($route, '/');
-
-            // Conversion des paramètres dynamiques {id} en regex
             $pattern = preg_replace('#\{[^\}]+\}#', '([^/]+)', $route);
             $pattern = "#^" . $pattern . "$#";
 
-            // Vérification si l'URI correspond à la route
             if (preg_match($pattern, $uri, $matches)) {
-
-                // Suppression de l'URI complète du tableau des matches
                 array_shift($matches);
-
-                // Extraction du contrôleur et de la méthode
                 [$controller, $methodName] = explode('@', $action);
-
-                // Namespace complet du contrôleur
                 $controller = "App\\Controllers\\$controller";
-
-                // Appel dynamique de la méthode avec paramètres
-                call_user_func_array(
-                    [new $controller(), $methodName],
-                    $matches
-                );
+                call_user_func_array([new $controller(), $methodName], $matches);
                 return;
             }
         }
 
-        // Aucune route trouvée
         $this->notFound();
     }
 

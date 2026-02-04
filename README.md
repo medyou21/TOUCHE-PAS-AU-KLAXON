@@ -1,7 +1,7 @@
 # TOUCHE PAS AU KLAXON 🚗💨
 
-Application web de gestion de covoiturage interne pour entreprises.  
-Permet la création de trajets, la réservation par les utilisateurs et la gestion par un administrateur.
+Application web de **covoiturage interne pour entreprises**, développée en PHP selon une architecture **MVC**.  
+Elle permet la création de trajets inter-sites, la réservation par les collaborateurs et la gestion globale par un administrateur.
 
 ---
 
@@ -9,144 +9,176 @@ Permet la création de trajets, la réservation par les utilisateurs et la gesti
 
 touche_pas_au_klaxon/
 │
-├── public/ # Dossier accessible depuis le web
-│ ├── index.php # Point d’entrée de l’application
-│ ├── assets/
-│ │ └── css/ # CSS compilé depuis Sass
-│ │ └── main.css
-│ └── js/ # JavaScript (Bootstrap, modals, etc.)
+├── public/                      # Dossier accessible depuis le web
+│   ├── index.php                # Point d’entrée de l’application
+│   ├── assets/
+│   │   ├── css/
+│   │   │   └── main.css         # CSS compilé depuis Sass
+│   │   └── js/                  # JavaScript (Bootstrap, modales, etc.)
 │
 ├── app/
-│ ├── Controllers/ # Contrôleurs MVC
-│ │ ├── AuthController.php
-│ │ ├── TrajetController.php
-│ │ └── AdminController.php
-│ │
-│ ├── Models/ # Modèles de données
-│ │ ├── Trajet.php
-│ │ ├── Agence.php
-│ │ ├── Utilisateur.php
-│ │ └── Reservation.php
-│ │
-│ ├── Views/ # Vues de l’application
-│ │ ├── templates/
-│ │ │ ├── header.php
-│ │ │ └── footer.php
-│ │ ├── admin_agences.php
-│ │ ├── admin_dashboard.php
-│ │ ├── admin_trajets.php
-│ │ ├── admin_users.php
-│ │ ├── edit_trajet.php
-│ │ ├── home.php
-│ │ ├── login.php
-│ │ ├── my_reservations.php
-│ │ ├── reservation_form.php
-│ │ └── trajet_form.php
-│ │
-│ └── Core/ # Classes de base (Router, Controller, DB)
-│ ├── Router.php
-│ ├── Controller.php
-│ └── Database.php
+│   ├── Controllers/             # Contrôleurs MVC
+│   │   ├── AuthController.php
+│   │   ├── TrajetController.php
+│   │   └── AdminController.php
+│   │
+│   ├── Models/                  # Modèles de données
+│   │   ├── Trajet.php
+│   │   ├── Agence.php
+│   │   ├── Utilisateur.php
+│   │   └── Reservation.php
+│   │
+│   ├── Views/                   # Vues (HTML/PHP)
+│   │   ├── templates/
+│   │   │   ├── header.php
+│   │   │   └── footer.php
+│   │   ├── admin_agences.php
+│   │   ├── admin_dashboard.php
+│   │   ├── admin_trajets.php
+│   │   ├── admin_users.php
+│   │   ├── edit_trajet.php
+│   │   ├── home.php
+│   │   ├── login.php
+│   │   ├── my_reservations.php
+│   │   ├── reservation_form.php
+│   │   └── trajet_form.php
+│   │
+│   └── Core/                    # Classes cœur (framework maison)
+│       ├── Router.php
+│       ├── Controller.php
+│       └── Database.php
 │
 ├── Database/
-│ └── install.php # Script d’installation de la base de données (3FN)
+│   └── install.php              # Script d’installation de la base (3FN)
 │
 ├── config/
-│ └── config.php # Variables globales et configuration DB
+│   └── config.php               # Configuration globale & base de données
 │
-├── vendor/ # Librairies Composer
+├── tests/                       # Tests unitaires PHPUnit
+│   ├── TrajetTest.php
+│   ├── ReservationTest.php
+│   └── TrajetFormTest.php
 │
-├── sass/ # Fichiers Sass à compiler
-│ └── main.scss
+├── vendor/                      # Dépendances Composer
 │
-└── composer.json # Configuration Composer
+├── sass/                        # Fichiers Sass
+│   └── main.scss
+│
+├── phpstan.neon                 # Configuration PHPStan
+├── phpunit.xml                  # Configuration PHPUnit
+├── composer.json
+└── README.md
 
+⚙️ Prérequis
+PHP >= 8.2
 
----
+MySQL ou MariaDB
 
-## ⚙️ Prérequis
+Composer
 
-- PHP >= 8.0
-- MySQL / MariaDB
-- Composer
-- Serveur web (Apache, Nginx, ou XAMPP/WAMP pour local)
-- Node.js + npm (si compilation SCSS via `sass`)
+Serveur web (Apache / Nginx / XAMPP / WAMP)
 
----
+Node.js + npm (pour compiler le SCSS)
 
-## 🚀 Installation
+🚀 Installation
 
-1. **Cloner le dépôt**
-
-```bash
+1️⃣ Cloner le dépôt
 git clone https://github.com/<votre-utilisateur>/touche_pas_au_klaxon.git
 cd touche_pas_au_klaxon
-Installer les dépendances PHP
 
+2️⃣ Installer les dépendances PHP
 composer install
-Configurer la base de données
 
-Copier config/config.php et adapter les valeurs :
+3️⃣ Configurer la base de données
+
+Modifier le fichier config/config.php :
 
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'touche_pas_au_klaxon');
+define('DB_NAME', 'touche_pas_au_klaxonn');
 define('DB_USER', 'root');
 define('DB_PASS', '');
-Créer la base et les tables
+
+4️⃣ Créer la base et les tables
 
 php Database/install.php
-Ce script crée les tables, les contraintes et insère des données de test (utilisateurs, agences, trajets).
+✔ Crée les tables en 3e forme normale (3FN)
+✔ Ajoute des données de test (agences, utilisateurs, trajets)
 
-Compiler le Sass en CSS
-
+5️⃣ Compiler le SCSS
 sass sass/main.scss public/assets/css/main.css
-Lancer l’application
 
-Accéder à http://localhost/touche_pas_au_klaxon/public via votre serveur web local.
+6️⃣ Lancer l’application
+Accéder à :
+
+http://localhost/touche_pas_au_klaxon/public
 
 📝 Fonctionnalités
-Gestion des utilisateurs et authentification (login/logout)
+Authentification utilisateurs (login / logout)
 
 Création, modification et suppression de trajets
 
-Réservation de trajets par les utilisateurs
+Réservation de trajets avec gestion des places disponibles
 
-Gestion des agences et affichage des disponibilités
+Gestion des agences
 
 Dashboard administrateur avec statistiques
 
-Interfaces responsives et animées (Bootstrap + SCSS)
+Interfaces responsives (Bootstrap 5)
 
-🔐 Identifiants de test
-Admin
-Email : admin@entreprise.com
-Mot de passe : password123
+Validation métier côté backend et base de données
 
-Utilisateur type
-Email : alexandre.martin@email.fr
-Mot de passe : password123
+🧪 Qualité & Tests
+✅ Tests unitaires (PHPUnit)
+vendor/bin/phpunit --testdox
+Tests des modèles (Trajet, Reservation)
+
+Tests des règles métiers (formulaires)
+
+Base de données réelle utilisée pour les tests
+
+✅ Analyse statique (PHPStan)
+vendor/bin/phpstan analyse app
+Niveau strict
+
+Typage fort
+
+Aucune erreur bloquante
 
 📌 Technologies utilisées
-PHP (MVC)
+PHP 8 (architecture MVC)
 
 MySQL / MariaDB
 
-Composer (autoloader)
+Composer (autoload PSR-4)
+
+PHPUnit (tests unitaires)
+
+PHPStan (analyse statique)
 
 SCSS (Sass)
 
 Bootstrap 5
 
-JavaScript (vanilla + modals)
+JavaScript (vanilla)
 
-📖 Notes
-Toutes les dates de trajets sont générées aléatoirement lors de l’installation.
+📖 Notes techniques
+Les contraintes métiers sont validées :
 
-Les contraintes métiers sont appliquées via MySQL (places disponibles, date de départ/arrivée).
+agences de départ / arrivée différentes
 
-Le CSS est modulable grâce aux variables SCSS.
+dates cohérentes
 
-Les modales et notifications utilisent Bootstrap 5.
+places disponibles ≤ places totales
 
+Les règles sont appliquées à la fois côté PHP et base de données
 
+Le code respecte les bonnes pratiques :
 
+encapsulation
+
+séparation des responsabilités
+
+testabilité
+
+👤 Auteur
+Projet réalisé par Mohamed Hamdi

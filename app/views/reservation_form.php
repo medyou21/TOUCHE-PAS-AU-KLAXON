@@ -2,42 +2,34 @@
 
 <?php
 /** 
- * @var array $trajet   // Contient les informations du trajet à réserver
- * @var array $user     // Données de l'utilisateur connecté
- * @var string|null $message // Message à afficher (trajet complet, erreur, etc.)
+ * @var array<string,mixed> $trajet   // Informations du trajet à réserver
+ * @var array<string,mixed> $user     // Données de l'utilisateur connecté
+ * @var string|null $message          // Message à afficher (trajet complet, erreur, etc.)
  */
 ?>
 
 <div class="container my-5">
 
-    <!-- Titre de la page -->
-    <h2 class="text-center text-success mb-4">
-        Réserver un trajet
-    </h2>
+    <h2 class="text-center text-success mb-4">Réserver un trajet</h2>
 
-    <!-- Carte contenant les détails du trajet -->
     <div class="card shadow-sm">
         <div class="card-header bg-primary text-white">
             Détails du trajet
         </div>
         <div class="card-body">
 
-            <!-- Informations principales du trajet -->
-            <p><strong>Départ :</strong> <span id="trajetDepart"><?= htmlspecialchars($trajet['depart']) ?></span></p>
-            <p><strong>Arrivée :</strong> <span id="trajetArrivee"><?= htmlspecialchars($trajet['arrivee']) ?></span></p>
-            <p><strong>Date départ :</strong> <span id="trajetDateDepart"><?= date('d/m/Y H:i', strtotime($trajet['date_depart'])) ?></span></p>
-            <p><strong>Date arrivée :</strong> <span id="trajetDateArrivee"><?= date('d/m/Y H:i', strtotime($trajet['date_arrivee'])) ?></span></p>
+            <p><strong>Départ :</strong> <span id="trajetDepart"><?= htmlspecialchars($trajet['depart'] ?? '') ?></span></p>
+            <p><strong>Arrivée :</strong> <span id="trajetArrivee"><?= htmlspecialchars($trajet['arrivee'] ?? '') ?></span></p>
+            <p><strong>Date départ :</strong> <span id="trajetDateDepart"><?= !empty($trajet['date_depart']) ? date('d/m/Y H:i', strtotime($trajet['date_depart'])) : '' ?></span></p>
+            <p><strong>Date arrivée :</strong> <span id="trajetDateArrivee"><?= !empty($trajet['date_arrivee']) ? date('d/m/Y H:i', strtotime($trajet['date_arrivee'])) : '' ?></span></p>
             <p>
                 <strong>Places disponibles :</strong>
-                <span class="badge bg-success" id="trajetPlaces" role="status"><?= $trajet['nb_places_disponibles'] ?></span>
+                <span class="badge bg-success" id="trajetPlaces" role="status"><?= (int)($trajet['nb_places_disponibles'] ?? 0) ?></span>
             </p>
 
             <hr>
 
-            <!-- Formulaire de réservation -->
             <form id="reservationForm" aria-describedby="reservationInfo">
-
-                <!-- Champ pour le nombre de places -->
                 <div class="mb-3">
                     <label for="nb_places" class="form-label">Nombre de places à réserver</label>
                     <input
@@ -46,25 +38,21 @@
                         name="nb_places"
                         class="form-control"
                         min="1"
-                        max="<?= $trajet['nb_places_disponibles'] ?>"  
+                        max="<?= (int)($trajet['nb_places_disponibles'] ?? 1) ?>"
                         required
                         aria-describedby="maxPlacesInfo"
-                    > <!-- Limite selon la disponibilité -->
+                    >
                     <div id="maxPlacesInfo" class="form-text">
-                        Maximum <?= $trajet['nb_places_disponibles'] ?> places disponibles
+                        Maximum <?= (int)($trajet['nb_places_disponibles'] ?? 1) ?> places disponibles
                     </div>
                 </div>
 
-                <!-- Boutons annuler / réserver -->
                 <div class="d-flex justify-content-between">
-                    <a href="<?= BASE_URL ?>/" class="btn btn-secondary" aria-label="Annuler la réservation">
-                        Annuler
-                    </a>
+                    <a href="<?= BASE_URL ?>/" class="btn btn-secondary" aria-label="Annuler la réservation">Annuler</a>
                     <button type="submit" class="btn btn-success" aria-label="Réserver le trajet">
                         <i class="bi bi-calendar-check"></i> Réserver
                     </button>
                 </div>
-
             </form>
 
         </div>
@@ -72,7 +60,6 @@
 
 </div>
 
-<!-- ================= MODAL MESSAGE ================= -->
 <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -88,30 +75,31 @@
   </div>
 </div>
 
-<!-- ================= JAVASCRIPT ================= -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const reservationForm = document.getElementById('reservationForm');
-    const badgePlaces = document.getElementById('trajetPlaces');
-    const inputNbPlaces = reservationForm.querySelector('input[name="nb_places"]');
-    const BASE_URL = '<?= BASE_URL ?>';
-    const trajetId = <?= (int)$trajet['id'] ?>;
+    if (!reservationForm) return;
 
-    // ================= MESSAGE INITIAL =================
+    const inputNbPlaces = reservationForm.querySelector('input[name="nb_places"]');
+    const trajetPlacesBadge = document.getElementById('trajetPlaces');
+    const BASE_URL = '<?= BASE_URL ?>';
+    const trajetId = <?= (int)($trajet['id'] ?? 0) ?>;
+
+    // Affiche le message initial si nécessaire
     <?php if(!empty($message)): ?>
         const modalBody = document.getElementById('messageModalBody');
         modalBody.innerText = <?= json_encode($message) ?>;
         const modal = new bootstrap.Modal(document.getElementById('messageModal'));
         modal.show();
 
-        // Désactiver le formulaire si réservation impossible
-        inputNbPlaces.disabled = true;
-        reservationForm.querySelector('button[type="submit"]').disabled = true;
+        if(inputNbPlaces) inputNbPlaces.disabled = true;
+        const submitBtn = reservationForm.querySelector('button[type="submit"]');
+        if(submitBtn) submitBtn.disabled = true;
     <?php endif; ?>
 
-    // ================= AJAX RÉSERVATION =================
-    reservationForm.addEventListener('submit', async function (e) {
+    reservationForm.addEventListener('submit', async function(e) {
         e.preventDefault();
+        if(!inputNbPlaces) return;
 
         const formData = new FormData(this);
 
@@ -123,19 +111,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const result = await response.json();
 
-            // Afficher le message dans la modal
             const modalBody = document.getElementById('messageModalBody');
-            modalBody.innerText = result.message;
+            modalBody.innerText = result.message || 'Message inconnu';
             const modal = new bootstrap.Modal(document.getElementById('messageModal'));
             modal.show();
 
             if (result.success) {
-                setTimeout(() => {
-                    window.location.href = `${BASE_URL}/`;
-                }, 1500);
+                setTimeout(() => window.location.href = `${BASE_URL}/`, 1500);
             }
 
-        } catch (error) {
+        } catch (err) {
             const modalBody = document.getElementById('messageModalBody');
             modalBody.innerText = 'Erreur serveur';
             new bootstrap.Modal(document.getElementById('messageModal')).show();

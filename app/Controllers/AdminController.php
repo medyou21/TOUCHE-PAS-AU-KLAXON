@@ -20,14 +20,14 @@ use App\Models\Trajet;
  */
 class AdminController extends Controller
 {
-    /** @var Utilisateur */
-    private $userModel;
+    /** @var Utilisateur $userModel */
+    private Utilisateur $userModel;
 
-    /** @var Agence */
-    private $agenceModel;
+    /** @var Agence $agenceModel */
+    private Agence $agenceModel;
 
-    /** @var Trajet */
-    private $trajetModel;
+    /** @var Trajet $trajetModel */
+    private Trajet $trajetModel;
 
     /**
      * Constructeur
@@ -96,7 +96,17 @@ class AdminController extends Controller
     public function usersJson(): void
     {
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->userModel->getAll());
+
+        try {
+            $users = $this->userModel->getAll();
+            echo json_encode($users);
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
     }
 
     /* =====================================================
@@ -117,7 +127,17 @@ class AdminController extends Controller
     public function agencesJson(): void
     {
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->agenceModel->getAll());
+
+        try {
+            $agences = $this->agenceModel->getAll();
+            echo json_encode($agences);
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
     }
 
     /**
@@ -128,21 +148,18 @@ class AdminController extends Controller
         header('Content-Type: application/json');
 
         try {
-            // Récupération et nettoyage du nom
             $name = trim($_POST['name'] ?? '');
+            if ($name === '') {
+                throw new \Exception('Nom d’agence vide');
+            }
 
-            // Insertion en base
-            $this->agenceModel->create([
-                'name' => $name
-            ]);
+            $this->agenceModel->create(['name' => $name]);
 
             echo json_encode([
                 'success' => true,
                 'message' => 'Agence créée avec succès'
             ]);
-
-        } catch (\Exception $e) {
-
+        } catch (\Throwable $e) {
             echo json_encode([
                 'success' => false,
                 'message' => $e->getMessage()
@@ -160,7 +177,6 @@ class AdminController extends Controller
         $id   = (int)($_POST['id'] ?? 0);
         $name = trim($_POST['name'] ?? '');
 
-        // Validation des données
         if ($id <= 0 || $name === '') {
             echo json_encode([
                 'success' => false,
@@ -169,17 +185,21 @@ class AdminController extends Controller
             return;
         }
 
-        // Mise à jour
-        $success = $this->agenceModel->update($id, [
-            'name' => $name
-        ]);
+        try {
+            $success = $this->agenceModel->update($id, ['name' => $name]);
 
-        echo json_encode([
-            'success' => $success,
-            'message' => $success
-                ? 'Agence modifiée avec succès'
-                : 'Erreur lors de la modification'
-        ]);
+            echo json_encode([
+                'success' => $success,
+                'message' => $success
+                    ? 'Agence modifiée avec succès'
+                    : 'Erreur lors de la modification'
+            ]);
+        } catch (\Throwable $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
     }
 
     /**
@@ -192,13 +212,15 @@ class AdminController extends Controller
         header('Content-Type: application/json');
 
         try {
-            $this->agenceModel->delete($id);
+            $success = $this->agenceModel->delete($id);
 
             echo json_encode([
-                'success' => true,
-                'message' => 'Agence supprimée avec succès'
+                'success' => $success,
+                'message' => $success
+                    ? 'Agence supprimée avec succès'
+                    : 'Erreur lors de la suppression'
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             echo json_encode([
                 'success' => false,
                 'message' => $e->getMessage()
@@ -219,12 +241,24 @@ class AdminController extends Controller
     }
 
     /**
-     * Liste des trajets avec conducteur (JSON)
+     * Liste des trajets disponibles (JSON)
      */
     public function trajetsJson(): void
     {
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->trajetModel->getAllWithConducteur());
+
+        try {
+            // On utilise la méthode existante du modèle Trajet
+            $trajets = $this->trajetModel->getAvailableTrajets();
+
+            echo json_encode($trajets);
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Erreur serveur : ' . $e->getMessage()
+            ]);
+        }
     }
 
     /**
@@ -244,14 +278,21 @@ class AdminController extends Controller
             return;
         }
 
-        $success = $this->trajetModel->delete($id);
+        try {
+            $success = $this->trajetModel->delete($id);
 
-        echo json_encode([
-            'success' => $success,
-            'message' => $success
-                ? 'Trajet supprimé avec succès'
-                : 'Erreur lors de la suppression du trajet'
-        ]);
+            echo json_encode([
+                'success' => $success,
+                'message' => $success
+                    ? 'Trajet supprimé avec succès'
+                    : 'Erreur lors de la suppression du trajet'
+            ]);
+        } catch (\Throwable $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
     }
 
     /* =====================================================
@@ -266,45 +307,53 @@ class AdminController extends Controller
     {
         header('Content-Type: application/json; charset=utf-8');
 
-        // Statistiques globales
-        $usersCount        = count($this->userModel->getAll());
-        $agencesCount      = count($this->agenceModel->getAll());
-        $trajetsCount      = count($this->trajetModel->getAvailableTrajets());
-        $trajetsActifsCount = $this->trajetModel->countActifs();
+        try {
+            // Statistiques globales
+            $usersCount        = count($this->userModel->getAll());
+            $agencesCount      = count($this->agenceModel->getAll());
+            $trajetsCount      = count($this->trajetModel->getAvailableTrajets());
+            $trajetsActifsCount = $this->trajetModel->countActifs();
 
-        // Trajets par jour (7 derniers jours)
-        $trajetsParJourRaw = $this->trajetModel->getTrajetsLastDays(7);
-        $trajetsParJour = [
-            'labels' => array_map(
-                fn($t) => date('d/m', strtotime($t['date'])),
-                $trajetsParJourRaw
-            ),
-            'data' => array_map(
-                fn($t) => $t['count'],
-                $trajetsParJourRaw
-            )
-        ];
+            // Trajets par jour (7 derniers jours)
+            $trajetsParJourRaw = $this->trajetModel->getTrajetsLastDays(7);
+            $trajetsParJour = [
+                'labels' => array_map(
+                    fn(array $t) => date('d/m', strtotime($t['date'])),
+                    $trajetsParJourRaw
+                ),
+                'data' => array_map(
+                    fn(array $t) => $t['count'],
+                    $trajetsParJourRaw
+                )
+            ];
 
-        // Répartition des utilisateurs par rôle
-        $usersByRoleRaw = $this->userModel->countByRole();
-        $usersByRole = [
-            'labels' => array_map(
-                fn($r) => ucfirst($r['role']),
-                $usersByRoleRaw
-            ),
-            'data' => array_map(
-                fn($r) => $r['count'],
-                $usersByRoleRaw
-            )
-        ];
+            // Répartition des utilisateurs par rôle
+            $usersByRoleRaw = $this->userModel->countByRole();
+            $usersByRole = [
+                'labels' => array_map(
+                    fn(array $r) => ucfirst($r['role']),
+                    $usersByRoleRaw
+                ),
+                'data' => array_map(
+                    fn(array $r) => $r['count'],
+                    $usersByRoleRaw
+                )
+            ];
 
-        echo json_encode([
-            'users'          => $usersCount,
-            'agences'        => $agencesCount,
-            'trajets'        => $trajetsCount,
-            'trajets_actifs' => $trajetsActifsCount,
-            'trajets_jour'   => $trajetsParJour,
-            'users_role'     => $usersByRole
-        ]);
+            echo json_encode([
+                'users'          => $usersCount,
+                'agences'        => $agencesCount,
+                'trajets'        => $trajetsCount,
+                'trajets_actifs' => $trajetsActifsCount,
+                'trajets_jour'   => $trajetsParJour,
+                'users_role'     => $usersByRole
+            ]);
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Erreur serveur : ' . $e->getMessage()
+            ]);
+        }
     }
 }
