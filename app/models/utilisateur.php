@@ -35,14 +35,13 @@ class Utilisateur
         $this->db = Database::getInstance();
     }
 
-    /**
-     * ==================================================
+    /* ==================================================
      * RÉCUPÉRER UN UTILISATEUR PAR EMAIL
-     * ==================================================
-     * Utilisé pour l'authentification
-     *
+     * ================================================== */
+
+    /**
      * @param string $email
-     * @return array|null
+     * @return array<string, mixed>|null
      */
     public function findByEmail(string $email): ?array
     {
@@ -53,7 +52,7 @@ class Utilisateur
                 prenom,
                 email,
                 telephone,
-                password,  -- hashé pour auth
+                password,
                 role
             FROM utilisateurs
             WHERE email = :email
@@ -61,20 +60,18 @@ class Utilisateur
         ");
 
         $stmt->execute(['email' => $email]);
-
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        return $user ?: null; // retourne null si aucun utilisateur
+        return $user ?: null;
     }
 
-    /**
-     * ==================================================
+    /* ==================================================
      * RÉCUPÉRER UN UTILISATEUR PAR ID
-     * ==================================================
-     * Utilisé pour les sessions et profils
-     *
+     * ================================================== */
+
+    /**
      * @param int $id
-     * @return array|null
+     * @return array<string, mixed>|null
      */
     public function findById(int $id): ?array
     {
@@ -92,19 +89,17 @@ class Utilisateur
         ");
 
         $stmt->execute(['id' => $id]);
-
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $user ?: null;
     }
 
-    /**
-     * ==================================================
+    /* ==================================================
      * RÉCUPÉRER TOUS LES UTILISATEURS
-     * ==================================================
-     * Admin uniquement
-     *
-     * @return array
+     * ================================================== */
+
+    /**
+     * @return array<int, array<string, mixed>>
      */
     public function getAll(): array
     {
@@ -123,13 +118,12 @@ class Utilisateur
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * ==================================================
+    /* ==================================================
      * COMPTER LES UTILISATEURS PAR RÔLE
-     * ==================================================
-     * Pour les statistiques / dashboard admin
-     *
-     * @return array Exemple :
+     * ================================================== */
+
+    /**
+     * @return array<int, array<string, mixed>> Exemple :
      * [
      *   ['role' => 'admin', 'count' => 3],
      *   ['role' => 'user',  'count' => 15]
@@ -150,17 +144,16 @@ class Utilisateur
         return $rows ?: [];
     }
 
+    /* ==================================================
+     * AJOUTER UN UTILISATEUR
+     * ================================================== */
+
     /**
-     * ==================================================
-     * (Optionnel) Ajouter un nouvel utilisateur
-     * ==================================================
-     * Bonnes pratiques :
-     *  - Hacher le mot de passe avant insertion
-     *  - Vérifier unicité de l'email
+     * @param array<string, mixed> $data
+     * @return bool
      */
     public function create(array $data): bool
     {
-        // Exemple de hachage du mot de passe
         $passwordHash = password_hash($data['password'], PASSWORD_DEFAULT);
 
         $stmt = $this->db->prepare("
@@ -178,10 +171,14 @@ class Utilisateur
         ]);
     }
 
+    /* ==================================================
+     * METTRE À JOUR UN UTILISATEUR
+     * ================================================== */
+
     /**
-     * ==================================================
-     * (Optionnel) Mettre à jour un utilisateur
-     * ==================================================
+     * @param int $id
+     * @param array<string, mixed> $data
+     * @return bool
      */
     public function update(int $id, array $data): bool
     {

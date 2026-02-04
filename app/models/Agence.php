@@ -19,7 +19,6 @@ class Agence
 
     public function __construct()
     {
-        // Utilisation du singleton Database
         $this->db = Database::getInstance();
     }
 
@@ -31,6 +30,8 @@ class Agence
 
     /**
      * Récupère toutes les agences
+     *
+     * @return array<int, array<string, mixed>>
      */
     public function getAll(): array
     {
@@ -39,11 +40,14 @@ class Agence
              FROM agences 
              ORDER BY nom_agence ASC"
         );
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
      * Récupère une agence par ID
+     *
+     * @param int $id
+     * @return array<string, mixed>|null
      */
     public function getById(int $id): ?array
     {
@@ -54,19 +58,22 @@ class Agence
         );
         $stmt->execute(['id' => $id]);
 
-        return $stmt->fetch() ?: null;
+        $agence = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $agence ?: null;
     }
 
     /**
      * =========================
      * Création
      * =========================
+     *
+     * @param array<string, mixed> $data
+     * @return bool
+     * @throws Exception
      */
-
     public function create(array $data): bool
     {
         $nom = trim($data['name'] ?? '');
-
         if ($nom === '') {
             return false;
         }
@@ -86,17 +93,19 @@ class Agence
      * =========================
      * Mise à jour
      * =========================
+     *
+     * @param int $id
+     * @param array<string, mixed> $data
+     * @return bool
+     * @throws Exception
      */
-
     public function update(int $id, array $data): bool
     {
         $nom = trim($data['name'] ?? '');
-
         if ($id <= 0 || $nom === '') {
             return false;
         }
 
-        // ⚠️ Vérifie le doublon en excluant l'agence actuelle
         if ($this->existsByName($nom, $id)) {
             throw new Exception("Cette agence existe déjà");
         }
@@ -117,9 +126,11 @@ class Agence
      * =========================
      * Suppression
      * =========================
-     * ❗ Interdite si l’agence est liée à un trajet
+     *
+     * @param int $id
+     * @return bool
+     * @throws Exception
      */
-
     public function delete(int $id): bool
     {
         if ($id <= 0) {
@@ -157,7 +168,10 @@ class Agence
 
     /**
      * Vérifie si une agence existe déjà
-     * (optionnellement en excluant un ID)
+     *
+     * @param string $name
+     * @param int|null $excludeId
+     * @return bool
      */
     public function existsByName(string $name, ?int $excludeId = null): bool
     {
@@ -172,6 +186,6 @@ class Agence
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
 
-        return $stmt->fetchColumn() > 0;
+        return (int)$stmt->fetchColumn() > 0;
     }
 }

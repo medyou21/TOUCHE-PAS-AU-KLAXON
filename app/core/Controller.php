@@ -25,7 +25,7 @@ class Controller
      *  - modales
      *
      * @param string $view Nom de la vue (relatif à app/Views)
-     * @param array  $data Données à transmettre à la vue
+     * @param array<string, mixed> $data Données à transmettre à la vue
      */
     protected function view(string $view, array $data = []): void
     {
@@ -49,7 +49,7 @@ class Controller
      * Méthode la plus utilisée pour les pages HTML classiques
      *
      * @param string $view Nom de la vue (relatif à app/Views)
-     * @param array  $data Données à transmettre à la vue
+     * @param array<string, mixed> $data Données à transmettre à la vue
      */
     protected function render(string $view, array $data = []): void
     {
@@ -94,4 +94,5 @@ class Controller
         header('Location: ' . $url);
         exit;
     }
-}
+
+    }
